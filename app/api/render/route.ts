@@ -1,4 +1,3 @@
-// app/api/render/route.ts
 import openai from '@/utils/openai';
 import { NextResponse } from 'next/server';
 import { generateText, StreamingTextResponse, streamText } from 'ai';
@@ -7,17 +6,19 @@ import dedent from 'dedent';
 
 export async function POST(request: Request) {
   try {
-    const {query} = await request.json();
-    console.log(query)
-    
+    const {messages} = await request.json();
     var {text} = await generateText({
       model: openai('Meta-Llama-3.1-405B-Instruct'),
       system: dedent(GENERATE_PROMPT),
-      prompt: query+"PLEASE RETURN ONLY CODE, NO NEED BACKTICKS WITH LANGUAGE NAME",
+      messages: messages.map((message: any)=>({
+        ...message,
+        content: message.role ==='user' ? message.content + "\n PLEASE ONLY RETURN CODE, NO NEED BACKTICKS WITH LANGUAGE NAME" : message.content
+      }))
     });
 
     text = dedent(text)
     console.log(text)
+    console.log("GENERATED AI Response")
     return NextResponse.json(text)
   } catch (error) {
     console.error('Error rendering code:', error);
@@ -26,12 +27,15 @@ export async function POST(request: Request) {
 }
 
 var GENERATE_PROMPT = `
-    You are an expert frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully, I will tip you $1 million if you do a good job:
+    You are an expert frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully
 
+    - DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`. DO NOT USE MARKDOWN CODE BLOCKS
     - Create a React component for whatever the user asked you to create and make sure it can run by itself by using a default export
-    - DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`.
     - DO NOT START WITH BACKTICKS 
     - Make sure the React app is interactive and functional by creating state when needed and having no required props
+    - You should add support for dark mode and light mode through tailwind classes. DO NOT ADD A DARK MODE TOGGLE AS THIS WILL BE HANDLED EXTERNALLY
+    - YOUR APP SHOULD ALWAYS TAKE UP THE ENTIRE SCREEN. USE h-full AND w-full IN THE ROOT DIV
+    - YOUR APP SHOULD BE FULLY RESPONSIVE IN MOBILE, TABLET AND DESKTOP
     - If you use any imports from React like useState or useEffect, make sure to import them directly
     - Use TypeScript as the language for the React component
     - Use Tailwind classes for styling. DO NOT USE ARBITRARY VALUES (e.g. \`h-[600px]\`). Make sure to use a consistent color palette.
@@ -41,6 +45,12 @@ var GENERATE_PROMPT = `
   There are some prestyled components available for use. Please use your best judgement to use any of these components if the app calls for one.
 
     Here are the components that are available, along with how to import them, and how to use them:
+    NOTE: Whem importing these components do not import them all in one import statement. Import them line by line
+    Example: 
+    \`\`\`typescript
+    import { Button } from "/components/ui/button"
+    import { Input } from "/components/ui/input"
+    \`\`\`
 
     ${shadcnComponents
       .map(
@@ -59,6 +69,7 @@ var GENERATE_PROMPT = `
         `,
       )
       .join("\n")}    
+
     `
 
   

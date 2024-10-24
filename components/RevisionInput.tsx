@@ -19,7 +19,7 @@ const RevisionInput: React.FC<RevisionInputProps> = ({ value, onChange, onSubmit
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="pl-10 pr-20 py-6 w-full bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 text-black dark:text-white rounded-full shadow-lg focus:ring-2 focus:ring-blue-500"
-          placeholder="Make the heading larger and darker"
+          placeholder="Add in your changes"
         />
         <Button
           onClick={onSubmit}

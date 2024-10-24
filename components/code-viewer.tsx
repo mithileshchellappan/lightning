@@ -1,38 +1,84 @@
 "use client";
 
+import { useEffect } from "react"
 import * as shadcnComponents from "@/utils/shadcn-ui-extract";
 import {
-  Sandpack,
+  // Sandpack,
+  SandpackInternalOptions,
+  SandpackLayout,
   SandpackPreview,
   SandpackProvider,
+  useSandpack,
 } from "@codesandbox/sandpack-react/unstyled";
 import dedent from "dedent";
 import "./code-viewer.css";
 
 export default function CodeViewer({
   code,
-  showEditor = false,
+  onError
 }: {
   code: string;
-  showEditor?: boolean;
+  onError: (error: string) => void;
 }) {
+
   return (
     <SandpackProvider
       files={{
         "App.tsx": code,
         ...sharedFiles,
+        "/styles.css": `:root {
+            color-scheme: inherit;
+          }
+          
+          body {
+            color: var(--your-text-color, inherit);
+            background-color: var(--your-bg-color, inherit);
+          }
+
+          .dark {
+            color-scheme: dark;
+          }
+        `
       }}
       className="flex h-full w-full grow flex-col justify-center"
+      // @ts-ignore
       options={{ ...sharedOptions }}
       {...sharedProps}
     >
-      <SandpackPreview
-        className="flex h-full w-full grow flex-col justify-center"
-        showOpenInCodeSandbox={false}
-        showRefreshButton={false}
-      />
+      <SandpackLayout className="h-full w-full">
+        <BaseSandpack onError={onError} />
+      </SandpackLayout>
+
     </SandpackProvider>
   );
+}
+
+function BaseSandpack({
+    onError
+  }: {
+    onError: (error: string) => void;
+  }) {
+    const {sandpack, listen} = useSandpack()
+
+    useEffect(() => {
+      const stopListening = listen((msg) => console.log(msg));
+      if(sandpack.error) {
+        onError(sandpack.error.message)
+      }
+      return () => {
+        stopListening();
+      };
+    }, [listen]);
+
+    return (
+        <SandpackPreview
+          className="flex h-full w-full grow flex-col justify-center"
+          showOpenInCodeSandbox={false}
+          showRefreshButton={false}
+        />
+    )
+  }
+  
   // return (
   //   <Sandpack
   //     options={{
@@ -48,7 +94,15 @@ export default function CodeViewer({
   //     {...sharedProps}
   //   />
   // )
-}
+  
+
+let sharedOptions: SandpackInternalOptions = {
+  externalResources: [
+    "https://unpkg.com/@tailwindcss/ui/dist/tailwind-ui.min.css",
+  ],
+  autoReload: true,
+  recompileMode: "immediate",
+};
 
 let sharedProps = {
   template: "react-ts",
@@ -95,15 +149,11 @@ let sharedProps = {
   },
 } as const;
 
-let sharedOptions = {
-  externalResources: [
-    "https://unpkg.com/@tailwindcss/ui/dist/tailwind-ui.min.css",
-  ],
-};
+
 //MARK: SHADCN COMPONENTS
 let sharedFiles = {
   "/lib/utils.ts": shadcnComponents.utils,
-  "/components/ui/accordion.tsx": shadcnComponents.accordian, 
+  "/components/ui/accordion.tsx": shadcnComponents.accordian,
   "/components/ui/alert-dialog.tsx": shadcnComponents.alertDialog,
   "/components/ui/alert.tsx": shadcnComponents.alert,
   "/components/ui/avatar.tsx": shadcnComponents.avatar,

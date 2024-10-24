@@ -11,6 +11,7 @@ import { Save, RefreshCw, History, ArrowUpRight } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Image from 'next/image'
+import Ripple from '@/components/ui/ripple'
 
 const versions = [
   { id: 'v0', version: 'v0', prompt: 'generate a sudoku app', imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
@@ -20,33 +21,83 @@ const versions = [
   { id: 'v4', version: 'v4', prompt: 'Generated UI from the prompt', imageUrl: '/path/to/image4.png', timestamp: '15 minutes ago' },
 ]
 
+const initialCode = 'export default function App() { return <div className="h-full w-full bg-white dark:bg-black">Loading...</div> }'
+
 export default function RenderPage() {
   const params = useParams()
   const id = params.id
   const { question } = useQuestion()
   const [message, setMessage] = useState('')
-  const [code, setCode] = useState('')
+  const [code, setCode] = useState(initialCode)
   const [isLoading, setIsLoading] = useState(false)
+  const [suggestions, setSuggestions] = useState([])
+  const [messages, setMessages] = useState<{ role: string, content: string }[]>([])
 
   async function fetchCode(query: string) {
     setIsLoading(true)
-    setCode('')  // Clear existing code
-
     try {
       const response = await fetch('/api/render', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ messages: [{ role: 'user', content: query }] }),
       })
-      setCode(await response.json())
+      const result = await response.json()
+      setCode(result)
+      setMessages([{ role: 'user', content: query }, { role: 'assistant', content: result }])
+      fetchSuggestions(code, query)
     } catch (error) {
       console.error('Error fetching code:', error)
-      setCode('Error fetching code. Please try again.')
+      setCode("<div>Error fetching code. Please try again.</div>")
     } finally {
       setIsLoading(false)
     }
+  }
+
+  async function updateCode(query: string) {
+    setIsLoading(true)
+    console.log("Loading" + isLoading)
+    try {
+      const response = await fetch('/api/render', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: [...messages, { role: "user", content: query }] }),
+      })
+      const result = await response.json()
+      console.log("Updating Code")
+      setCode(result)
+      setMessages([...messages, { role: 'assistant', content: result }])
+      fetchSuggestions(code, query)
+    } catch (error) {
+      console.error('Error fetching code:', error)
+      setCode("<div>Error fetching code. Please try again.</div>")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
+  async function fetchSuggestions(code: string, query: string) {
+    try {
+      const response = await fetch('/api/suggestions', {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      })
+      if (!response.body) return
+      const reader = response.body?.pipeThrough(new TextDecoderStream()).getReader()
+      let result = ''
+      while (true) {
+        const { done, value } = await reader?.read()
+        if (done) break
+        console.log(value)
+      }
+    } catch (error) {
+      console.error('Error fetching suggestions:', error)
+    }
+
   }
 
   useEffect(() => {
@@ -54,8 +105,9 @@ export default function RenderPage() {
   }, [])
 
   const handleSend = () => {
-    console.log('Sending message:', message)
+    updateCode(message)
     setMessage('')
+    setIsLoading(true)
   }
 
   const handleSave = () => {
@@ -66,21 +118,14 @@ export default function RenderPage() {
     console.log('Regenerating...')
   }
 
-  // This array can be fetched from an API or state management solution
-  const suggestions = [
-    "Generate a sticky header",
-    "Add responsive design",
-    "Implement dark mode",
-    "Create a navigation menu",
-    "Optimize for performance",
-    "Add accessibility features",
-    "Implement state management",
-    "Implement state management"
-  ];
-
   const handleSuggestionClick = (suggestion: string) => {
     setMessage(suggestion)
-    handleSend()
+  }
+
+  const handleError = (error: string) => {
+    if (messages.length > 0 && !isLoading) {
+      updateCode("An error occurred: " + error)
+    }
   }
 
   return (
@@ -128,8 +173,8 @@ export default function RenderPage() {
         {/* Main content */}
         <main className="flex-grow flex flex-col overflow-hidden p-4">
           <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg">
-            <div className="h-full overflow-auto p-4">
-              <CodeViewer code={code} />
+            <div className="h-full overflow-auto">
+              {!isLoading ? <LoadingRipple /> : <CodeViewer code={code} onError={handleError} />}
             </div>
           </div>
           <div className="mt-4 flex flex-col space-y-2">
@@ -142,9 +187,9 @@ export default function RenderPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleSuggestionClick(suggestion)}
-                      className={`h-6 px-2 text-xs rounded-full bg-muted hover:bg-gray-100 focus:bg-gray-100 focus-visible:bg-gray-100 text-gray-900 border-gray-300 hover:border-gray-400 focus:border-gray-400 focus-visible:border-gray-400 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 transition-all flex items-center gap-0.5 whitespace-nowrap flex-shrink-0 ${index >= 3 ? 'hidden sm:flex' : ''}`}
+                      className={`h-6 px-2 text-xs rounded-full bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 focus:bg-gray-100 dark:focus:bg-zinc-700 focus-visible:bg-gray-100 dark:focus-visible:bg-zinc-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-gray-400 dark:focus:border-gray-500 focus-visible:border-gray-400 dark:focus-visible:border-gray-400 focus-visible:ring-2 focus-visible:ring-blue-600 dark:focus-visible:ring-blue-400 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-black transition-all flex items-center gap-0.5 whitespace-nowrap flex-shrink-0 ${index >= 3 ? 'hidden sm:flex' : ''}`}
                     >
-                      <span className="truncate max-w-[180px]">{suggestion}</span>
+                      <span className="truncate max-w-[180px] text-black dark:text-white">{suggestion}</span>
                       <ArrowUpRight className="h-4 w-4 flex-shrink-0" />
                     </Button>
                   ))}
@@ -162,6 +207,17 @@ export default function RenderPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+const LoadingRipple = () => {
+  return (
+    <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-background md:shadow-xl">
+        <p className="z-10 whitespace-pre-wrap text-center text-5xl font-medium tracking-tighter text-white darK: ">
+          Generating
+        </p>
+        <Ripple />
+      </div>
   )
 }
 
