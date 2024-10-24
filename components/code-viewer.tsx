@@ -1,7 +1,8 @@
 "use client";
 
-import * as shadcnComponents from "@/utils/shadcn-extracted";
+import * as shadcnComponents from "@/utils/shadcn-ui-extract";
 import {
+  Sandpack,
   SandpackPreview,
   SandpackProvider,
 } from "@codesandbox/sandpack-react/unstyled";
@@ -32,6 +33,21 @@ export default function CodeViewer({
       />
     </SandpackProvider>
   );
+  // return (
+  //   <Sandpack
+  //     options={{
+  //       showNavigator: true,
+  //       editorHeight: "80vh",
+  //       showTabs: false,
+  //       ...sharedOptions,
+  //     }}
+  //     files={{
+  //       "App.tsx": code,
+  //       ...sharedFiles,
+  //     }}
+  //     {...sharedProps}
+  //   />
+  // )
 }
 
 let sharedProps = {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuestion } from '@/context/QuestionContext'
-import { useTheme } from '@/context/ThemeProvider'
+import { useTheme } from 'next-themes'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import * as LucideIcons from "lucide-react"
@@ -13,6 +13,7 @@ import { RainbowButton } from '@/components/ui/rainbow-button'
 import FlickeringGrid from '@/components/ui/flickering-grid'
 import AnimatedShinyText from '@/components/ui/animated-shiny-text'
 import ChatInput from '@/components/chat-input'
+import { ModeToggle } from '@/components/theme-toggle'
 
 export default function AIAssistant() {
   const { question, setQuestion } = useQuestion()
@@ -21,12 +22,8 @@ export default function AIAssistant() {
     { name: "Cron Job Scheduler", description: "An interface to schedule cron jobs", image: "/placeholder.jpg", icon: "Clock" },
     { name: "Array Flattener", description: "A function to flatten nested arrays", image: "/placeholder.jpg", icon: "Layers" },
   ])
-  const { isDarkMode } = useTheme()
+  const { resolvedTheme } = useTheme()
   const router = useRouter()
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDarkMode)
-  }, [isDarkMode])
 
   const handleGenerate = () => {
     if (question.trim()) {
@@ -43,10 +40,15 @@ export default function AIAssistant() {
     <div className="min-h-screen relative bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
       <FlickeringGrid
         className="absolute inset-0 z-0"
-        color={isDarkMode ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)"}
+        color={resolvedTheme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)"}
         maxOpacity={0.1}
       />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
+        {/* Add the dark mode toggle button */}
+        <ModeToggle
+          className="fixed top-4 right-4 z-20"
+        />
+
         <div className="w-full max-w-4xl space-y-8">
           <div className="flex justify-center">
             <AnimatedShinyText >

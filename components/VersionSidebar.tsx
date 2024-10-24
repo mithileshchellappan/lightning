@@ -1,9 +1,8 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Sun, Moon } from 'lucide-react';
-import { useTheme } from '../context/ThemeProvider';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import Image from 'next/image';
+import { ModeToggle } from './theme-toggle';
 
 interface Version {
   id: string;
@@ -15,7 +14,6 @@ interface Version {
 }
 
 const VersionSidebar: React.FC = () => {
-  const { isDarkMode, toggleDarkMode } = useTheme();
   const versions: Version[] = [
     { id: 'v0', version: 'v0', prompt: 'generate a sudoku app', isActive: false, imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
     { id: 'v1', version: 'v1', prompt: 'where are the numbers?', isActive: true, imageUrl: '/path/to/image1.png', timestamp: 'about 2 hours ago' },
@@ -25,8 +23,8 @@ const VersionSidebar: React.FC = () => {
   ];
 
   return (
-    <div className="w-[44px] shrink-0 select-none flex flex-col bg-white dark:bg-zinc-900 h-full border-r border-gray-200 dark:border-zinc-800 hidden md:flex">
-      <div className="flex-grow overflow-y-auto py-2">
+    <div className="w-[44px] shrink-0 select-none flex-col bg-white dark:bg-zinc-900 h-full border-r border-gray-200 dark:border-zinc-800 md:flex">
+      <div className="flex-grow overflow-y-auto py-2 mt-4">
         {versions.map((version) => (
           <HoverCard key={version.id}
           openDelay={2}
@@ -35,7 +33,7 @@ const VersionSidebar: React.FC = () => {
             <HoverCardTrigger asChild>
               <Button
                 variant="ghost"
-                className={`w-[80%] h-10 p-4 justify-center ${
+                className={`w-[80%] h-10 p-4 justify-center ml-1 ${
                   version.isActive ? 'text-sm font-medium bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 rounded-md hover:bg-blue-200 transition-colors' : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
@@ -66,15 +64,9 @@ const VersionSidebar: React.FC = () => {
           </HoverCard>
         ))}
       </div>
-      <div className="mt-auto p-2 border-t border-gray-200 dark:border-zinc-800">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleDarkMode}
-          className="w-full p-0 justify-center"
-        >
-          {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
+      <div className="mt-auto ml-1 p-2 border-t border-gray-200 dark:border-zinc-800">
+        <ModeToggle
+          className="p-0 justify-center h-4 w-4 outline-none"/>
       </div>
     </div>
   );

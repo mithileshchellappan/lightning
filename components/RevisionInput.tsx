@@ -11,7 +11,7 @@ interface RevisionInputProps {
 
 const RevisionInput: React.FC<RevisionInputProps> = ({ value, onChange, onSubmit }) => {
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div className="relative w-full max-w mx-auto">
       <div className="relative flex items-center">
         <Sparkles className="absolute left-3 h-5 w-5 text-gray-400" />
         <Input
