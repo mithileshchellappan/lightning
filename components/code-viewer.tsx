@@ -3,6 +3,8 @@
 import { useEffect } from "react"
 import * as shadcnComponents from "@/utils/shadcn-ui-extract";
 import {
+  SandpackCodeEditor,
+  SandpackCodeViewer,
   // Sandpack,
   SandpackInternalOptions,
   SandpackLayout,
@@ -12,33 +14,25 @@ import {
 } from "@codesandbox/sandpack-react/unstyled";
 import dedent from "dedent";
 import "./code-viewer.css";
+import { useActiveCode } from "@codesandbox/sandpack-react/unstyled";
 
 export default function CodeViewer({
   code,
-  onError
+  onError,
+  updateCode, 
+  viewCode = false
 }: {
   code: string;
   onError: (error: string) => void;
+  updateCode: (code: string) => void;
+  viewCode: boolean;
 }) {
 
   return (
     <SandpackProvider
       files={{
         "App.tsx": code,
-        ...sharedFiles,
-        "/styles.css": `:root {
-            color-scheme: inherit;
-          }
-          
-          body {
-            color: var(--your-text-color, inherit);
-            background-color: var(--your-bg-color, inherit);
-          }
-
-          .dark {
-            color-scheme: dark;
-          }
-        `
+        ...sharedFiles
       }}
       className="flex h-full w-full grow flex-col justify-center"
       // @ts-ignore
@@ -46,7 +40,16 @@ export default function CodeViewer({
       {...sharedProps}
     >
       <SandpackLayout className="h-full w-full">
-        <BaseSandpack onError={onError} />
+       {viewCode &&
+       <SandpackCodeEditor
+       className="h-full w-full"
+        showTabs={false}
+        showLineNumbers
+        closableTabs={true}
+        wrapContent={true}
+        
+       /> }
+       <BaseSandpack updateInnerCode={updateCode} onError={onError} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col justify-center'}/>
       </SandpackLayout>
 
     </SandpackProvider>
@@ -54,25 +57,22 @@ export default function CodeViewer({
 }
 
 function BaseSandpack({
-    onError
+    onError,
+    updateInnerCode,
+    className
   }: {
     onError: (error: string) => void;
+    updateInnerCode: (code: string) => void;
+    className: string;
   }) {
-    const {sandpack, listen} = useSandpack()
-
+    
+    const {code, updateCode} = useActiveCode()
     useEffect(() => {
-      const stopListening = listen((msg) => console.log(msg));
-      if(sandpack.error) {
-        onError(sandpack.error.message)
-      }
-      return () => {
-        stopListening();
-      };
-    }, [listen]);
-
+      updateInnerCode(code)
+    }, [code])
     return (
         <SandpackPreview
-          className="flex h-full w-full grow flex-col justify-center"
+          className={className}
           showOpenInCodeSandbox={false}
           showRefreshButton={false}
         />
@@ -100,12 +100,13 @@ let sharedOptions: SandpackInternalOptions = {
   externalResources: [
     "https://unpkg.com/@tailwindcss/ui/dist/tailwind-ui.min.css",
   ],
-  autoReload: true,
-  recompileMode: "immediate",
+  // autoReload: true,
+  recompileMode: "delayed",
 };
 
 let sharedProps = {
   template: "react-ts",
+  theme: "dark",
   customSetup: {
     dependencies: {
       "lucide-react": "latest",

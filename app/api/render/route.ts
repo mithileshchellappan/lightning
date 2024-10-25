@@ -7,6 +7,7 @@ import dedent from 'dedent';
 export async function POST(request: Request) {
   try {
     const {messages} = await request.json();
+    console.log(messages)
     var {text} = await generateText({
       model: openai('Meta-Llama-3.1-405B-Instruct'),
       system: dedent(GENERATE_PROMPT),
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     return NextResponse.json(text)
   } catch (error) {
     console.error('Error rendering code:', error);
-    return new NextResponse('Error rendering the component', { status: 500 });
+    return NextResponse.json({ error: 'Error rendering the component', status: 500 });
   }
 }
 

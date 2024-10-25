@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useQuestion } from '@/context/QuestionContext'
 import { useTheme } from 'next-themes'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import * as LucideIcons from "lucide-react"
 import { LucideIcon } from 'lucide-react'
 import Image from 'next/image'
@@ -16,7 +15,7 @@ import ChatInput from '@/components/chat-input'
 import { ModeToggle } from '@/components/theme-toggle'
 
 export default function AIAssistant() {
-  const { question, setQuestion } = useQuestion()
+  const [question, setQuestion] = useState('')
   const [savedApps, setSavedApps] = useState([
     { name: "Onboarding Flow", description: "A multi-step onboarding process", image: "/placeholder.jpg", icon: "Sparkles" },
     { name: "Cron Job Scheduler", description: "An interface to schedule cron jobs", image: "/placeholder.jpg", icon: "Clock" },
@@ -28,7 +27,7 @@ export default function AIAssistant() {
   const handleGenerate = () => {
     if (question.trim()) {
       const chatId = Date.now().toString() // Generate a unique ID based on timestamp
-      router.push(`/chat/${chatId}`)
+      router.push(`/chat/${chatId}?question=${encodeURIComponent(question)}`)
     }
   }
 

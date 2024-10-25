@@ -1,17 +1,17 @@
 'use client'
 
-import { useParams } from 'next/navigation'
-import { useQuestion } from '@/context/QuestionContext'
-import { useEffect, useState } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
+import { useEffect, useState, useRef } from 'react'
 import CodeViewer from '@/components/code-viewer'
 import RevisionInput from '@/components/RevisionInput'
 import VersionSidebar from '@/components/VersionSidebar'
 import { Button } from "@/components/ui/button"
-import { Save, RefreshCw, History, ArrowUpRight } from 'lucide-react'
+import { Save, History, ArrowUpRight, Code, RefreshCcw } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Image from 'next/image'
 import Ripple from '@/components/ui/ripple'
+import { SandpackPreviewRef } from "@codesandbox/sandpack-react"
 
 const versions = [
   { id: 'v0', version: 'v0', prompt: 'generate a sudoku app', imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
@@ -21,17 +21,21 @@ const versions = [
   { id: 'v4', version: 'v4', prompt: 'Generated UI from the prompt', imageUrl: '/path/to/image4.png', timestamp: '15 minutes ago' },
 ]
 
-const initialCode = 'export default function App() { return <div className="h-full w-full bg-white dark:bg-black">Loading...</div> }'
+const errorCode = 'export default function App() { return (<div>Error Fetching Code</div>) }'
 
 export default function RenderPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const id = params.id
-  const { question } = useQuestion()
+  var question = searchParams.get('question') || ''
   const [message, setMessage] = useState('')
-  const [code, setCode] = useState(initialCode)
+  const [code, setCode] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [suggestions, setSuggestions] = useState([])
   const [messages, setMessages] = useState<{ role: string, content: string }[]>([])
+  const [viewCode, setViewCode] = useState(false)
+  const [errorCount, setErrorCount] = useState(0);
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   async function fetchCode(query: string) {
     setIsLoading(true)
@@ -46,10 +50,10 @@ export default function RenderPage() {
       const result = await response.json()
       setCode(result)
       setMessages([{ role: 'user', content: query }, { role: 'assistant', content: result }])
-      fetchSuggestions(code, query)
+      fetchSuggestions(result, query)
     } catch (error) {
       console.error('Error fetching code:', error)
-      setCode("<div>Error fetching code. Please try again.</div>")
+      setCode(errorCode)
     } finally {
       setIsLoading(false)
     }
@@ -67,13 +71,15 @@ export default function RenderPage() {
         body: JSON.stringify({ messages: [...messages, { role: "user", content: query }] }),
       })
       const result = await response.json()
-      console.log("Updating Code")
       setCode(result)
-      setMessages([...messages, { role: 'assistant', content: result }])
-      fetchSuggestions(code, query)
+      setMessage('')
+      console.log("Updating Code")
+      setViewCode(false)
+      setMessages([...messages, { role: 'assistant', content: code }])
+      // fetchSuggestions(code, query)
     } catch (error) {
       console.error('Error fetching code:', error)
-      setCode("<div>Error fetching code. Please try again.</div>")
+      setCode(errorCode)
     } finally {
       setIsLoading(false)
     }
@@ -101,31 +107,47 @@ export default function RenderPage() {
   }
 
   useEffect(() => {
-    fetchCode(question)
-  }, [])
+    if (question) {
+      fetchCode(question)
+      question = ''
+    }
+    console.log('running effect')
+  }, [question])
 
   const handleSend = () => {
     updateCode(message)
-    setMessage('')
     setIsLoading(true)
   }
 
-  const handleSave = () => {
-    console.log('Saving...')
-  }
-
-  const handleRegenerate = () => {
-    console.log('Regenerating...')
+  const handleViewCode = () => {
+    setViewCode(!viewCode)
   }
 
   const handleSuggestionClick = (suggestion: string) => {
     setMessage(suggestion)
   }
 
-  const handleError = (error: string) => {
-    if (messages.length > 0 && !isLoading) {
-      updateCode("An error occurred: " + error)
+  useEffect(() => {
+    if (errorCount > 0) {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+      errorTimeoutRef.current = setTimeout(() => {
+        setErrorCount(0);
+      }, 5000); // Reset error count after 5 seconds
     }
+  }, [errorCount]);
+
+  const handleUpdate = (error: string) => {
+    // if (errorCount < 4) {
+    //   setErrorCount(prevCount => prevCount + 1);
+    //   if (messages.length > 0 && !isLoading) {
+    //     updateCode("An error occurred: " + error);
+    //   }
+    // }
+  };
+
+  const handleError = (error: string) => {
   }
 
   return (
@@ -142,25 +164,27 @@ export default function RenderPage() {
               <div className="flex box-content h-6 items-center gap-2 rounded-md border border-gs-gray-alpha-400 bg-white dark:bg-zinc-800 p-1 ml-auto">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={handleRegenerate} className="dark:text-white">
-                      <RefreshCw className="h-4 w-4" />
-                      <span className="sr-only">Regenerate</span>
+                    <Button variant="ghost" size="icon" onClick={handleViewCode} className="dark:text-white">
+                      <Code className="h-4 w-4" />
+                      <span className="sr-only">View Code</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Regenerate</p>
+                    <p>View Code</p>
                   </TooltipContent>
                 </Tooltip>
                 <div className="shrink-0 bg-gray-200 dark:bg-zinc-700 w-[1px] h-5"></div>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={handleSave} className="dark:text-white">
-                      <Save className="h-4 w-4" />
-                      <span className="sr-only">Save</span>
+                    <Button variant="ghost" size="icon" onClick={()=>{
+                      //TODO: Refresh the code
+                    }} className="dark:text-white">
+                      <RefreshCcw className="h-4 w-4" />
+                      <span className="sr-only">Refresh</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Save</p>
+                    <p>Refresh</p>
                   </TooltipContent>
                 </Tooltip>
                 <div className="shrink-0 bg-gray-200 dark:bg-zinc-700 w-[1px] h-5 md:hidden"></div>
@@ -174,7 +198,7 @@ export default function RenderPage() {
         <main className="flex-grow flex flex-col overflow-hidden p-4">
           <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg">
             <div className="h-full overflow-auto">
-              {!isLoading ? <LoadingRipple /> : <CodeViewer code={code} onError={handleError} />}
+              {(isLoading) ? <LoadingRipple /> : <CodeViewer onError={handleError} updateCode={handleUpdate} code={code} viewCode={viewCode} />}
             </div>
           </div>
           <div className="mt-4 flex flex-col space-y-2">
@@ -201,6 +225,7 @@ export default function RenderPage() {
                 value={message}
                 onChange={setMessage}
                 onSubmit={handleSend}
+                disabled={isLoading}
               />
             </div>
           </div>

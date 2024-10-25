@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { PWA } from "./pwa";
 import { ThemeProvider } from '../context/ThemeProvider'
-import { QuestionProvider } from "../context/QuestionContext";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -38,10 +37,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <QuestionProvider>
             <PWA />
             {children}
-          </QuestionProvider>
         </ThemeProvider>
       </body>
     </html>
