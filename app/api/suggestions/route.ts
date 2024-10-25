@@ -23,14 +23,20 @@ export async function POST(request: Request) {
 
 const GENERATE_PROMPT = `
     You are a suggestions engine. You will be given a code snippet and you will need to return a list of suggestions for improvements.
-    You will return a list of suggestions in markdown format.
-    You will return a maximum of 5 suggestions.
+    You will return a maximum of 7 suggestions.
+    You will reply with a special tag <suggestion>...</suggestion> that contains the suggestions.
+    There should be a new line after each suggestion.
     Example:
-    - Add a responsive design
-    - Add a dark mode
-    - Add a navigation menu
+       <suggestion>Add a responsive design</suggestion> \n
+       <suggestion>Add a dark mode</suggestion> \n
+       <suggestion>Add a navigation menu</suggestion> \n
+       <suggestion>Add a new feature</suggestion> \n
+       <suggestion>Fix the bugs</suggestion> \n
+       <suggestion>Improve the performance</suggestion> \n
+       <suggestion>Add a new page</suggestion> \n
     DO NOT RETURN ANYTHING ELSE.
     ONLY RETURN THE SUGGESTIONS.
     DO NOT RETURN ANYTHING ELSE.
     DO NOT ADD ANY MARKDOWN FORMATTING EXCEPT FOR THE LIST.
+    ALWAYS RETURN 7 SUGGESTIONS.
 `

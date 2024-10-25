@@ -31,7 +31,7 @@ export default function RenderPage() {
   const [message, setMessage] = useState('')
   const [code, setCode] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [suggestions, setSuggestions] = useState([])
+  const [suggestions, setSuggestions] = useState<string[]>([])
   const [messages, setMessages] = useState<{ role: string, content: string }[]>([])
   const [viewCode, setViewCode] = useState(false)
   const [errorCount, setErrorCount] = useState(0);
@@ -76,7 +76,7 @@ export default function RenderPage() {
       console.log("Updating Code")
       setViewCode(false)
       setMessages([...messages, { role: 'assistant', content: code }])
-      // fetchSuggestions(code, query)
+      fetchSuggestions(code, query)
     } catch (error) {
       console.error('Error fetching code:', error)
       setCode(errorCode)
@@ -94,16 +94,24 @@ export default function RenderPage() {
       })
       if (!response.body) return
       const reader = response.body?.pipeThrough(new TextDecoderStream()).getReader()
-      let result = ''
+      let previousLine = ''
       while (true) {
         const { done, value } = await reader?.read()
         if (done) break
-        console.log(value)
+        console.log(`value: ${value} previousLine: ${previousLine}`)
+        previousLine += value
+        if (previousLine.includes('<suggestion>') && previousLine.includes('</suggestion>')) {
+          const suggestion = previousLine.substring(
+            previousLine.indexOf('<suggestion>') + '<suggestion>'.length,
+            previousLine.indexOf('</suggestion>')
+          )
+          setSuggestions(prevSuggestions => [...prevSuggestions, suggestion])
+          previousLine = previousLine.substring(previousLine.indexOf('</suggestion>') + '</suggestion>'.length)
+        }
       }
     } catch (error) {
       console.error('Error fetching suggestions:', error)
     }
-
   }
 
   useEffect(() => {
@@ -117,6 +125,7 @@ export default function RenderPage() {
   const handleSend = () => {
     updateCode(message)
     setIsLoading(true)
+    setSuggestions([])
   }
 
   const handleViewCode = () => {
