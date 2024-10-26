@@ -33,7 +33,7 @@ const EXAMPLE_CODE = `import { useState } from 'react';\nimport { Input } from \
 `
 
 var GENERATE_PROMPT = `
-    You are an expert frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully
+    You are a senior frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully
 
     - DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`. DO NOT USE MARKDOWN CODE BLOCKS
     - Create a React component for whatever the user asked you to create and make sure it can run by itself by using a default export

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react"
+import { LegacyRef, useEffect } from "react"
 import * as shadcnComponents from "@/utils/shadcn-ui-extract";
 import {
   SandpackCodeEditor,
@@ -9,6 +9,7 @@ import {
   SandpackInternalOptions,
   SandpackLayout,
   SandpackPreview,
+  SandpackPreviewRef,
   SandpackProvider,
   useSandpack,
 } from "@codesandbox/sandpack-react/unstyled";
@@ -17,14 +18,13 @@ import "./code-viewer.css";
 import { useActiveCode } from "@codesandbox/sandpack-react/unstyled";
 
 export default function CodeViewer({
+  ref,
   code,
-  onError,
-  updateCode, 
   viewCode = false
+  
 }: {
+  ref: LegacyRef<SandpackPreviewRef>;
   code: string;
-  onError: (error: string) => void;
-  updateCode: (code: string) => void;
   viewCode: boolean;
 }) {
 
@@ -49,7 +49,7 @@ export default function CodeViewer({
         wrapContent={true}
         
        /> }
-       <BaseSandpack updateInnerCode={updateCode} onError={onError} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col justify-center'}/>
+       <BaseSandpack ref={ref}  className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col justify-center'}/>
       </SandpackLayout>
 
     </SandpackProvider>
@@ -57,21 +57,15 @@ export default function CodeViewer({
 }
 
 function BaseSandpack({
-    onError,
-    updateInnerCode,
+    ref,
     className
   }: {
-    onError: (error: string) => void;
-    updateInnerCode: (code: string) => void;
+    ref: LegacyRef<SandpackPreviewRef>;
     className: string;
   }) {
-    
-    const {code, updateCode} = useActiveCode()
-    useEffect(() => {
-      updateInnerCode(code)
-    }, [code])
     return (
         <SandpackPreview
+          ref={ref}
           className={className}
           showOpenInCodeSandbox={false}
           showRefreshButton={false}

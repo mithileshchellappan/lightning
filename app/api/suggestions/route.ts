@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 }
 
 const GENERATE_PROMPT = `
-    You are a suggestions engine. You will be given a code snippet and you will need to return a list of suggestions for improvements.
+    You are a UI suggestions engine. You will be given a code snippet and you will need to return a list of suggestions for improvements.
     You will return a maximum of 7 suggestions.
     You will reply with a special tag <suggestion>...</suggestion> that contains the suggestions.
     There should be a new line after each suggestion.

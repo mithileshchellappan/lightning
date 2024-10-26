@@ -4,21 +4,21 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import CodeViewer from '@/components/code-viewer'
 import RevisionInput from '@/components/RevisionInput'
-import VersionSidebar from '@/components/VersionSidebar'
+import VersionSidebar, { Version } from '@/components/VersionSidebar'
 import { Button } from "@/components/ui/button"
-import { Save, History, ArrowUpRight, Code, RefreshCcw } from 'lucide-react'
+import { History, ArrowUpRight, Code, RefreshCcw } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Image from 'next/image'
 import Ripple from '@/components/ui/ripple'
-import { SandpackPreviewRef } from "@codesandbox/sandpack-react"
+import { SandpackPreviewRef } from '@codesandbox/sandpack-react/unstyled'
 
-const versions = [
-  { id: 'v0', version: 'v0', prompt: 'generate a sudoku app', imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
-  { id: 'v1', version: 'v1', prompt: 'where are the numbers?', imageUrl: '/path/to/image1.png', timestamp: '2 hours ago' },
-  { id: 'v2', version: 'v2', prompt: 'Delete element', imageUrl: '/path/to/image2.png', timestamp: '1 hour ago' },
-  { id: 'v3', version: 'v3', prompt: 'this is good', imageUrl: '/path/to/image3.png', timestamp: '30 minutes ago' },
-  { id: 'v4', version: 'v4', prompt: 'Generated UI from the prompt', imageUrl: '/path/to/image4.png', timestamp: '15 minutes ago' },
+const mockVersions = [
+  { id: 'v0', version: 'v0', content: 'generate a sudoku app', imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
+  { id: 'v1', version: 'v1', content: 'where are the numbers?', imageUrl: '/path/to/image1.png', timestamp: '2 hours ago' },
+  { id: 'v2', version: 'v2', content: 'Delete element', imageUrl: '/path/to/image2.png', timestamp: '1 hour ago' },
+  { id: 'v3', version: 'v3', content: 'this is good', imageUrl: '/path/to/image3.png', timestamp: '30 minutes ago' },
+  { id: 'v4', version: 'v4', content: 'Generated UI from the prompt', imageUrl: '/path/to/image4.png', timestamp: '15 minutes ago' },
 ]
 
 const errorCode = 'export default function App() { return (<div>Error Fetching Code</div>) }'
@@ -34,8 +34,9 @@ export default function RenderPage() {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [messages, setMessages] = useState<{ role: string, content: string }[]>([])
   const [viewCode, setViewCode] = useState(false)
-  const [errorCount, setErrorCount] = useState(0);
-  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [versions, setVersions] = useState<Version[]>(mockVersions)
+  const iframeRef = useRef<SandpackPreviewRef>(null)
+
 
   async function fetchCode(query: string) {
     setIsLoading(true)
@@ -122,6 +123,10 @@ export default function RenderPage() {
     console.log('running effect')
   }, [question])
 
+  useEffect(() => {
+    console.log("ver",versions)
+  }, [versions])
+
   const handleSend = () => {
     updateCode(message)
     setIsLoading(true)
@@ -135,17 +140,6 @@ export default function RenderPage() {
   const handleSuggestionClick = (suggestion: string) => {
     setMessage(suggestion)
   }
-
-  useEffect(() => {
-    if (errorCount > 0) {
-      if (errorTimeoutRef.current) {
-        clearTimeout(errorTimeoutRef.current);
-      }
-      errorTimeoutRef.current = setTimeout(() => {
-        setErrorCount(0);
-      }, 5000); // Reset error count after 5 seconds
-    }
-  }, [errorCount]);
 
   const handleUpdate = (error: string) => {
     // if (errorCount < 4) {
@@ -161,9 +155,6 @@ export default function RenderPage() {
 
   return (
     <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
-      <div className="hidden md:block">
-        <VersionSidebar />
-      </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4">
@@ -182,22 +173,6 @@ export default function RenderPage() {
                     <p>View Code</p>
                   </TooltipContent>
                 </Tooltip>
-                <div className="shrink-0 bg-gray-200 dark:bg-zinc-700 w-[1px] h-5"></div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={()=>{
-                      //TODO: Refresh the code
-                    }} className="dark:text-white">
-                      <RefreshCcw className="h-4 w-4" />
-                      <span className="sr-only">Refresh</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Refresh</p>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="shrink-0 bg-gray-200 dark:bg-zinc-700 w-[1px] h-5 md:hidden"></div>
-                <HistorySheet />
               </div>
             </TooltipProvider>
           </div>
@@ -207,14 +182,14 @@ export default function RenderPage() {
         <main className="flex-grow flex flex-col overflow-hidden p-4">
           <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg">
             <div className="h-full overflow-auto">
-              {(isLoading) ? <LoadingRipple /> : <CodeViewer onError={handleError} updateCode={handleUpdate} code={code} viewCode={viewCode} />}
+              {(isLoading) ? <LoadingRipple /> : <CodeViewer ref={iframeRef} code={code} viewCode={viewCode} />}
             </div>
           </div>
           <div className="mt-4 flex flex-col space-y-2">
             {suggestions.length > 0 && (
               <div className="flex overflow-x-auto no-scrollbar">
                 <div className="flex space-x-2 pb-2">
-                  {suggestions.slice(0, 8).map((suggestion, index) => (
+                  {suggestions.slice(0, 7).map((suggestion, index) => (
                     <Button
                       key={index}
                       variant="outline"
@@ -255,7 +230,7 @@ const LoadingRipple = () => {
   )
 }
 
-const HistorySheet = () => (
+const HistorySheet = ({versions}: {versions: Version[]}) => (
   <Sheet>
     <SheetTrigger asChild>
       <Button variant="ghost" size="icon" className="md:hidden">
@@ -268,20 +243,28 @@ const HistorySheet = () => (
       className="max-h-[80vh] overflow-y-auto rounded-t-[10px] border-t-0"
     >
       <div className="flex flex-col space-y-4">
-        {versions.map((version) => (
+        {versions.map((version,index) => (
           <div key={version.id} className="flex items-center space-x-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
             <div className="relative w-16 h-16">
-              <Image
-                src={version.imageUrl}
-                alt={version.prompt}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-md"
-              />
+              {version.imageUrl.startsWith('data:image/png;base64,') ? (
+                <img
+                  src={version.imageUrl}
+                  alt={version.content}
+                  className="w-full h-full object-cover rounded-md"
+                />
+              ) : (
+                <Image
+                  src={version.imageUrl}
+                  alt={version.content}
+                  layout="fill"
+                  objectFit="cover"
+                  className="rounded-md"
+                />
+              )}
             </div>
             <div className="flex-1">
-              <p className="font-semibold">{version.version}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{version.prompt}</p>
+              <p className="font-semibold">v{index}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{version.content}</p>
               <p className="text-xs text-gray-400 dark:text-gray-500">{version.timestamp}</p>
             </div>
           </div>
