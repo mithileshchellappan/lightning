@@ -13,6 +13,7 @@ import FlickeringGrid from '@/components/ui/flickering-grid'
 import AnimatedShinyText from '@/components/ui/animated-shiny-text'
 import ChatInput from '@/components/chat-input'
 import { ModeToggle } from '@/components/theme-toggle'
+import GradualSpacing from '@/components/ui/gradual-spacing'
 
 export default function AIAssistant() {
   const [question, setQuestion] = useState('')
@@ -56,9 +57,8 @@ export default function AIAssistant() {
             </AnimatedShinyText>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-bold text-center">
-            Start generating your Instant App
-          </h1>
+          <GradualSpacing text="Generate Apps in ⚡️ Speed" className="text-4xl sm:text-5xl font-bold text-center"/>
+            
 
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex-grow">

@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Image from 'next/image'
 import Ripple from '@/components/ui/ripple'
 import { SandpackPreviewRef } from '@codesandbox/sandpack-react/unstyled'
+import ShinyButton from '@/components/ui/shiny-button'
 
 const mockVersions = [
   { id: 'v0', version: 'v0', content: 'generate a sudoku app', imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
@@ -29,7 +30,7 @@ export default function RenderPage() {
   const id = params.id
   var question = searchParams.get('question') || ''
   const [message, setMessage] = useState('')
-  const [code, setCode] = useState('')
+  const [code, setCode] = useState<{code: string, name?: string, icon?: string}>({code: '', name: undefined, icon: undefined})
   const [isLoading, setIsLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [messages, setMessages] = useState<{ role: string, content: string }[]>([])
@@ -49,12 +50,13 @@ export default function RenderPage() {
         body: JSON.stringify({ messages: [{ role: 'user', content: query }] }),
       })
       const result = await response.json()
+      console.log("result", result)
       setCode(result)
       setMessages([{ role: 'user', content: query }, { role: 'assistant', content: result }])
-      fetchSuggestions(result, query)
+      fetchSuggestions(result.code, query)
     } catch (error) {
       console.error('Error fetching code:', error)
-      setCode(errorCode)
+      setCode({code: errorCode, name: 'Error occurred', icon: ''})
     } finally {
       setIsLoading(false)
     }
@@ -76,11 +78,11 @@ export default function RenderPage() {
       setMessage('')
       console.log("Updating Code")
       setViewCode(false)
-      setMessages([...messages, { role: 'assistant', content: code }])
-      fetchSuggestions(code, query)
+      setMessages([...messages, { role: 'assistant', content: code.code }])
+      fetchSuggestions(code.code, query)
     } catch (error) {
       console.error('Error fetching code:', error)
-      setCode(errorCode)
+      setCode({code: errorCode, name: code.name, icon: code.icon})
     } finally {
       setIsLoading(false)
     }
@@ -157,9 +159,9 @@ export default function RenderPage() {
     <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4">
-          <div className="max-w-4xl mx-auto flex items-center">
-            <h1 className="text-lg sm:text-2xl font-bold truncate">Chat ID: {id}</h1>
+        <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between ">
+            <h1 className="text-lg ml-6 sm:text-2xl font-bold truncate">{code.name ?? 'Lightning'}</h1>
+            <div className='flex items-center'>
             <TooltipProvider>
               <div className="flex box-content h-6 items-center gap-2 rounded-md border border-gs-gray-alpha-400 bg-white dark:bg-zinc-800 p-1 ml-auto">
                 <Tooltip>
@@ -175,6 +177,7 @@ export default function RenderPage() {
                 </Tooltip>
               </div>
             </TooltipProvider>
+            <ShinyButton className='ml-5' >Publish</ShinyButton>
           </div>
         </header>
 
@@ -182,7 +185,7 @@ export default function RenderPage() {
         <main className="flex-grow flex flex-col overflow-hidden p-4">
           <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg">
             <div className="h-full overflow-auto">
-              {(isLoading) ? <LoadingRipple /> : <CodeViewer ref={iframeRef} code={code} viewCode={viewCode} />}
+              {(isLoading) ? <LoadingRipple /> : <CodeViewer ref={iframeRef} code={code.code} viewCode={viewCode} />}
             </div>
           </div>
           <div className="mt-4 flex flex-col space-y-2">

@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     var stream = await streamText({
       model: openai('Meta-Llama-3.2-1B-Instruct'),
       system: dedent(GENERATE_PROMPT),
-      prompt: code,
+      prompt: dedent(code),
     });
 
     return stream.toTextStreamResponse()

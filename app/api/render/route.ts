@@ -8,21 +8,39 @@ export async function POST(request: Request) {
   try {
     const {messages} = await request.json();
     console.log(messages)
-    // var {text} = await generateText({
-    //   model: openai('Meta-Llama-3.1-405B-Instruct'),
-    //   system: dedent(GENERATE_PROMPT),
-    //   messages: messages.map((message: any)=>({
-    //     ...message,
-    //     content: message.role ==='user' ? message.content + "\n PLEASE ONLY RETURN CODE, NO NEED BACKTICKS WITH LANGUAGE NAME" : message.content
-    //   }))
-    // });
-
-    var text = EXAMPLE_CODE
+    var {text} = await generateText({
+      model: openai('Meta-Llama-3.1-405B-Instruct'),
+      system: dedent(GENERATE_PROMPT),
+      messages: messages.map((message: any)=>({
+        ...message,
+        content: message.role ==='user' ? message.content + "\n PLEASE ONLY RETURN CODE STARTING WITH <lightningArtifact ...>...</lightningArtifact>, NO NEED BACKTICKS WITH LANGUAGE NAME" : message.content
+      }))
+    });
 
     text = dedent(text)
     console.log(text)
     console.log("GENERATED AI Response")
-    return NextResponse.json(text)
+    if (!text.startsWith("<lightningArtifact")) {
+      return NextResponse.json({ error: 'Error rendering the component', status: 500 });
+    }
+
+    // Extract name and icon from lightningArtifact tag
+    const nameMatch = text.match(/name="([^"]*)"/)
+    const iconMatch = text.match(/icon="([^"]*)"/)
+    const name = nameMatch ? nameMatch[1] : ''
+    const icon = iconMatch ? iconMatch[1] : ''
+
+    // Extract code from inside lightningArtifact tag
+    const codeMatch = text.match(/<lightningArtifact[^>]*>([\s\S]*)<\/lightningArtifact>/)
+    const code = codeMatch ? codeMatch[1].trim() : ''
+
+    const result = {
+      code,
+      name,
+      icon
+    }
+    
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error rendering code:', error);
     return NextResponse.json({ error: 'Error rendering the component', status: 500 });
@@ -34,7 +52,10 @@ const EXAMPLE_CODE = `import { useState } from 'react';\nimport { Input } from \
 
 var GENERATE_PROMPT = `
     You are a senior frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully
-
+    
+    - Start with tag <lightningArtifact name="..." icon="...">...</lightningArtifact>
+    - The name should be the name of the app generated.
+    - The icon should be a valid icon name from the Lucide React icon library. The icon text would be used to import the icon directly from the Lucide React library, e.g. \`import { IconName } from "lucide-react"\`.
     - DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`. DO NOT USE MARKDOWN CODE BLOCKS
     - Create a React component for whatever the user asked you to create and make sure it can run by itself by using a default export
     - DO NOT START WITH BACKTICKS 
