@@ -18,12 +18,10 @@ import "./code-viewer.css";
 import { useActiveCode } from "@codesandbox/sandpack-react/unstyled";
 
 export default function CodeViewer({
-  ref,
   code,
   viewCode = false
   
 }: {
-  ref: LegacyRef<SandpackPreviewRef>;
   code: string;
   viewCode: boolean;
 }) {
@@ -49,7 +47,7 @@ export default function CodeViewer({
         wrapContent={true}
         
        /> }
-       <BaseSandpack ref={ref}  className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col justify-center'}/>
+       <BaseSandpack  className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col justify-center'}/>
       </SandpackLayout>
 
     </SandpackProvider>
@@ -57,15 +55,12 @@ export default function CodeViewer({
 }
 
 function BaseSandpack({
-    ref,
     className
   }: {
-    ref: LegacyRef<SandpackPreviewRef>;
     className: string;
   }) {
     return (
         <SandpackPreview
-          ref={ref}
           className={className}
           showOpenInCodeSandbox={false}
           showRefreshButton={false}

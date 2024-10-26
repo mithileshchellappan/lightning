@@ -37,8 +37,7 @@ export default function RenderPage() {
   const [messages, setMessages] = useState<{ role: string, content: string }[]>([])
   const [viewCode, setViewCode] = useState(false)
   const [versions, setVersions] = useState<Version[]>(mockVersions)
-  const iframeRef = useRef<SandpackPreviewRef>(null)
-  const {isSignedIn} = useUser();
+  const { user } = useUser();
   const router = useRouter();
 
 
@@ -121,7 +120,7 @@ export default function RenderPage() {
   }
 
   useEffect(() => {
-    if(!isSignedIn) {
+    if(!user) {
       router.push('/')
       return;
     }
@@ -162,6 +161,44 @@ export default function RenderPage() {
   const handleError = (error: string) => {
   }
 
+  const handlePublish = async () => {
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    if (!code.code || !code.name || !code.icon) {
+      console.error('Missing required data for publishing');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/publish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: code.name,
+          code: code.code,
+          icon: code.icon,
+          userId: user.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to publish app');
+      }
+
+      const result = await response.json();
+      console.log('App published successfully:', result);
+      // You might want to show a success message to the user here
+    } catch (error) {
+      console.error('Error publishing app:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
   return (
     <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -184,7 +221,8 @@ export default function RenderPage() {
                 </Tooltip>
               </div>
             </TooltipProvider>
-            <ShinyButton className='ml-5' >Publish</ShinyButton>
+            {/* @ts-ignore */}
+            <ShinyButton className='ml-5' onClick={handlePublish}>Publish</ShinyButton>
           </div>
         </header>
 
@@ -192,7 +230,7 @@ export default function RenderPage() {
         <main className="flex-grow flex flex-col overflow-hidden p-4">
           <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg">
             <div className="h-full overflow-auto">
-              {(isLoading) ? <LoadingRipple /> : <CodeViewer ref={iframeRef} code={code.code} viewCode={viewCode} />}
+              {(isLoading) ? <LoadingRipple /> : <CodeViewer code={code.code} viewCode={viewCode} />}
             </div>
           </div>
           <div className="mt-4 flex flex-col space-y-2">

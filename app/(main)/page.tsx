@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { Button } from "@/components/ui/button"
@@ -15,18 +15,45 @@ import ChatInput from '@/components/chat-input'
 import { ModeToggle } from '@/components/theme-toggle'
 import GradualSpacing from '@/components/ui/gradual-spacing'
 import { useClerk, UserButton, useUser } from '@clerk/nextjs'
+import CodeViewer from '@/components/code-viewer'
+
+interface PublishedApp {
+  id: string;
+  name: string;
+  icon: string;
+  code: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function AIAssistant() {
   const [question, setQuestion] = useState('')
-  const [savedApps, setSavedApps] = useState([
-    { name: "Onboarding Flow", description: "A multi-step onboarding process", image: "/placeholder.jpg", icon: "Sparkles" },
-    { name: "Cron Job Scheduler", description: "An interface to schedule cron jobs", image: "/placeholder.jpg", icon: "Clock" },
-    { name: "Array Flattener", description: "A function to flatten nested arrays", image: "/placeholder.jpg", icon: "Layers" },
-  ])
+  const [savedApps, setSavedApps] = useState<PublishedApp[]>([])
   const { resolvedTheme } = useTheme()
   const router = useRouter()
   const clerk = useClerk();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
+
+  useEffect(() => {
+    if (isSignedIn && user) {
+      fetchPublishedApps();
+    }
+  }, [isSignedIn, user]);
+
+  const fetchPublishedApps = async () => {
+    try {
+      const response = await fetch(`/api/publish?userId=${user?.id}`);
+      if (response.ok) {
+        const apps = await response.json();
+        setSavedApps(apps);
+      } else {
+        console.error('Failed to fetch published apps');
+      }
+    } catch (error) {
+      console.error('Error fetching published apps:', error);
+    }
+  };
 
   const handleGenerate = () => {
     if(!isSignedIn) {
@@ -39,8 +66,8 @@ export default function AIAssistant() {
     }
   }
 
-  const handleAppClick = (appName: string) => {
-    console.log(`Clicked on app: ${appName}`)
+  const handleAppClick = (appId: string) => {
+    router.push(`/app/${appId}`)
   }
 
   return (
@@ -89,31 +116,25 @@ export default function AIAssistant() {
               Generate
             </RainbowButton>
           </div>
-          {isSignedIn && (
+          {isSignedIn && savedApps.length > 0 && (
           <div>
             <div className="flex items-center mb-4">
               <LucideIcons.Save className="w-6 h-6 mr-2 text-gray-600 dark:text-gray-400" />
               <h2 className="text-2xl font-bold">Your Saved Apps ({savedApps.length})</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {savedApps.map((app, index) => {
+              {savedApps.map((app) => {
                 const IconComponent = (LucideIcons[app.icon as keyof typeof LucideIcons] as LucideIcon) || LucideIcons.Sparkles;
                 return (
                   <Button
-                    key={index}
+                    key={app.id}
                     className="p-0 h-auto w-full"
                     variant="ghost"
-                    onClick={() => handleAppClick(app.name)}
+                    onClick={() => handleAppClick(app.id)}
                   >
                     <Card className="w-full bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 overflow-hidden group">
                       <div className="relative aspect-[4/3]">
-                        <Image
-                          // src="https://sambanova.ai/hubfs/sambanova-x-li-card-1104x552.png"
-                          src={app.image}
-                          alt={app.name}
-                          layout="fill"
-                          objectFit="cover"
-                        />
+                        <CodeViewer code={app.code} />
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent">
                           <div className="p-3">
                             <h3 className="font-medium text-sm flex items-center text-white">
