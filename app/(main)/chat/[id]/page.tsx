@@ -1,6 +1,6 @@
 'use client'
 
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import CodeViewer from '@/components/code-viewer'
 import RevisionInput from '@/components/RevisionInput'
@@ -13,6 +13,7 @@ import Image from 'next/image'
 import Ripple from '@/components/ui/ripple'
 import { SandpackPreviewRef } from '@codesandbox/sandpack-react/unstyled'
 import ShinyButton from '@/components/ui/shiny-button'
+import { useUser } from '@clerk/nextjs'
 
 const mockVersions = [
   { id: 'v0', version: 'v0', content: 'generate a sudoku app', imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
@@ -37,6 +38,8 @@ export default function RenderPage() {
   const [viewCode, setViewCode] = useState(false)
   const [versions, setVersions] = useState<Version[]>(mockVersions)
   const iframeRef = useRef<SandpackPreviewRef>(null)
+  const {isSignedIn} = useUser();
+  const router = useRouter();
 
 
   async function fetchCode(query: string) {
@@ -118,6 +121,10 @@ export default function RenderPage() {
   }
 
   useEffect(() => {
+    if(!isSignedIn) {
+      router.push('/')
+      return;
+    }
     if (question) {
       fetchCode(question)
       question = ''

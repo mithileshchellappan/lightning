@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { PWA } from "./pwa";
 import { ThemeProvider } from '../context/ThemeProvider'
-
+import { ClerkProvider } from "@clerk/nextjs";
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -29,6 +29,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
+    <ClerkProvider>
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider
@@ -38,9 +39,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
             <PWA />
+            
             {children}
         </ThemeProvider>
       </body>
-    </html>
+      </html>
+    </ClerkProvider>
   );
 }

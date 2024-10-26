@@ -14,6 +14,7 @@ import AnimatedShinyText from '@/components/ui/animated-shiny-text'
 import ChatInput from '@/components/chat-input'
 import { ModeToggle } from '@/components/theme-toggle'
 import GradualSpacing from '@/components/ui/gradual-spacing'
+import { useClerk, UserButton, useUser } from '@clerk/nextjs'
 
 export default function AIAssistant() {
   const [question, setQuestion] = useState('')
@@ -24,8 +25,14 @@ export default function AIAssistant() {
   ])
   const { resolvedTheme } = useTheme()
   const router = useRouter()
+  const clerk = useClerk();
+  const { isSignedIn } = useUser();
 
   const handleGenerate = () => {
+    if(!isSignedIn) {
+      clerk.openSignIn();
+      return;
+    }
     if (question.trim()) {
       const chatId = Date.now().toString() // Generate a unique ID based on timestamp
       router.push(`/chat/${chatId}?question=${encodeURIComponent(question)}`)
@@ -45,9 +52,16 @@ export default function AIAssistant() {
       />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
         {/* Add the dark mode toggle button */}
+        <div className="flex items-center">
         <ModeToggle
-          className="fixed top-4 right-4 z-20"
+          className="fixed top-4 left-4 z-20"
         />
+        <div className="fixed top-4 right-4 z-20">
+        <UserButton />
+        </div>
+        </div>
+
+        
 
         <div className="w-full max-w-4xl space-y-8">
           <div className="flex justify-center">
@@ -75,11 +89,11 @@ export default function AIAssistant() {
               Generate
             </RainbowButton>
           </div>
-
+          {isSignedIn && (
           <div>
             <div className="flex items-center mb-4">
               <LucideIcons.Save className="w-6 h-6 mr-2 text-gray-600 dark:text-gray-400" />
-              <h2 className="text-2xl font-bold">Your Saved Apps</h2>
+              <h2 className="text-2xl font-bold">Your Saved Apps ({savedApps.length})</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {savedApps.map((app, index) => {
@@ -117,8 +131,9 @@ export default function AIAssistant() {
                   </Button>
                 );
               })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
