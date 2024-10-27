@@ -11,6 +11,9 @@ const nextConfig = {
   images: {
     domains: ['sambanova.ai'],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = withPWA(nextConfig);

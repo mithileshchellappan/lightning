@@ -1,6 +1,6 @@
 'use client'
 
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import {useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import CodeViewer from '@/components/code-viewer'
 import RevisionInput from '@/components/RevisionInput'
@@ -9,31 +9,28 @@ import { Button } from "@/components/ui/button"
 import { History, ArrowUpRight, Code } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import Image from 'next/image'
 import Ripple from '@/components/ui/ripple'
 import ShinyButton from '@/components/ui/shiny-button'
 import { useUser } from '@clerk/nextjs'
 import { Version } from '@/components/version'
-import { randomUUID } from 'crypto'
 import ErrorDialogue from '@/components/error-dialogue'
-
-const mockVersions = [
-  { id: 'v0', version: 'v0', content: 'generate a sudoku app', imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
-  { id: 'v1', version: 'v1', content: 'where are the numbers?', imageUrl: '/path/to/image1.png', timestamp: '2 hours ago' },
-  { id: 'v2', version: 'v2', content: 'Delete element', imageUrl: '/path/to/image2.png', timestamp: '1 hour ago' },
-  { id: 'v3', version: 'v3', content: 'this is good', imageUrl: '/path/to/image3.png', timestamp: '30 minutes ago' },
-  { id: 'v4', version: 'v4', content: 'Generated UI from the prompt', imageUrl: '/path/to/image4.png', timestamp: '15 minutes ago' },
-]
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const errorCode = 'export default function App() { return (<div>Error Fetching Code</div>) }'
 
 export type Message = { role: string, content: string }
 
 export default function RenderPage() {
-  const params = useParams()
   const searchParams = useSearchParams()
-  const id = params.id
-  var question = searchParams.get('question') || ''
+  let question = searchParams.get('question') || ''
   const [message, setMessage] = useState('')
   const [code, setCode] = useState<{code: string, name?: string, icon?: string}>({code: '', name: undefined, icon: undefined})
   const [isLoading, setIsLoading] = useState(false)
@@ -41,9 +38,9 @@ export default function RenderPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [viewCode, setViewCode] = useState(false)
   const [versions, setVersions] = useState<Version[]>([])
-  const [error, setError] = useState<string|undefined>(undefined)
   const { user } = useUser();
   const router = useRouter();
+  const [showPublishAlert, setShowPublishAlert] = useState(false)
 
 
   async function fetchCode(query: string) {
@@ -170,19 +167,10 @@ export default function RenderPage() {
   const handleSuggestionClick = (suggestion: string) => {
     setMessage(suggestion)
   }
-
-  const handleError = () => {
-    setMessage(`Error Occured: ${error}`)
-  }
   
   const errorCallback = (errorMessage: string) => {
     console.log("errorMessage", errorMessage)
-    if(errorMessage !== '' && errorMessage !== error) {
-      setError(errorMessage)
-    }
-    if(errorMessage === '' || !errorMessage) {
-      setError(undefined)
-    }
+    setMessage(`Error Occured: ${errorMessage}`)
   }
 
   const handlePublish = async () => {
@@ -216,6 +204,11 @@ export default function RenderPage() {
 
       const result = await response.json();
       console.log('App published successfully:', result);
+      
+      const appUrl = `${window.location.origin}/app/${result.id}`;
+      await navigator.clipboard.writeText(appUrl);
+      
+      setShowPublishAlert(true);
     } catch (error) {
       console.error('Error publishing app:', error);
     }
@@ -256,14 +249,13 @@ export default function RenderPage() {
         {/* Main content */}
         <main className="flex-grow flex flex-col overflow-hidden p-4">
           <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg relative">
-            <div className="h-full w-full">
-              <CodeViewer errorCallback={errorCallback} code={code.code} viewCode={viewCode} />
-              {error && error !== '' && (
-                <div className="absolute bottom-4 right-4 z-10">
-                  <ErrorDialogue errorMessage={error} onClick={handleError} />
-                </div>
-              )}
-            </div>
+            {isLoading ?
+              <LoadingRipple /> :
+              (
+                <div className="h-full w-full">
+                  <CodeViewer errorCallback={errorCallback} code={code.code} viewCode={viewCode} />
+              </div>
+            )}
           </div>
           <div className="mt-4 flex flex-col space-y-2">
             {suggestions.length > 0 && (
@@ -295,6 +287,21 @@ export default function RenderPage() {
           </div>
         </main>
       </div>
+
+      <AlertDialog open={showPublishAlert} onOpenChange={setShowPublishAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>App Published Successfully</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your app has been published and is now available in your saved apps. 
+              The app URL has been copied to your clipboard.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowPublishAlert(false)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -1,7 +1,10 @@
 "use client";
 
-import { LegacyRef, useEffect } from "react"
+import { useEffect } from "react"
 import * as shadcnComponents from "@/utils/shadcn-ui-extract";
+import { SandpackLogLevel } from "@codesandbox/sandpack-client";
+import { atomDark } from '@codesandbox/sandpack-themes'
+
 import {
   SandpackCodeEditor,
   SandpackCodeViewer,
@@ -28,9 +31,38 @@ export default function CodeViewer({
 
   return (
     <SandpackProvider
+      theme={atomDark}
       files={{
-        "App.tsx": code,
-        ...sharedFiles
+        "App.tsx": `
+        import {useEffect, useState} from "react"
+        import GeneratedApp from "./GeneratedApp.tsx"
+
+        export default function App() {
+          const [isDarkMode, setIsDarkMode] = useState(false)
+          useEffect(() => {
+            const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+            setIsDarkMode(darkModeMediaQuery.matches)
+
+            const listener = (e: MediaQueryListEvent) => setIsDarkMode(e.matches)
+            darkModeMediaQuery.addEventListener('change', listener)
+            console.log("isDarkMode", isDarkMode)
+            return () => darkModeMediaQuery.removeEventListener('change', listener)
+          }, [])
+          return <div className="h-screen w-screen \${isDarkMode ? 'dark' : ''}">
+            <GeneratedApp />
+          </div>
+        }
+        `,
+        "GeneratedApp.tsx": code,
+        "tailwind.config.js": dedent`
+          module.exports = {
+            content: [
+              "./src/**/*.{js,ts,jsx,tsx}",
+            ],
+            darkMode: "class",
+          }
+        `,
+        ...sharedFiles,
       }}
       className="flex h-full w-full grow flex-col justify-center"
       // @ts-ignore
@@ -38,16 +70,15 @@ export default function CodeViewer({
       {...sharedProps}
     >
       <SandpackLayout className="h-full w-full">
-       {viewCode &&
-       <SandpackCodeViewer
-      //  className="h-full w-full"
-        showTabs={false}
-        showLineNumbers
-        // closableTabs={true}
-        wrapContent={true}
-        
-       /> }
-       <BaseSandpack viewCode={viewCode} errorCallback={errorCallback} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col justify-center object-contain'}/>
+        {viewCode &&
+          <SandpackCodeEditor
+            showTabs={false}
+            showLineNumbers
+            closableTabs={true}
+            wrapContent={true}
+
+          />}
+        <BaseSandpack viewCode={viewCode} errorCallback={errorCallback} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col'} />
       </SandpackLayout>
 
     </SandpackProvider>
@@ -55,68 +86,52 @@ export default function CodeViewer({
 }
 
 function BaseSandpack({
-    className,
-    viewCode,
-    errorCallback
-  }: {
-    className: string;
-    viewCode: boolean;
-    errorCallback?: (error: string) => void;
-  }) {
-    const {sandpack} = useSandpack()
+  className,
+  viewCode,
+  errorCallback
+}: {
+  className: string;
+  viewCode: boolean;
+  errorCallback?: (error: string) => void;
+}) {
+  const { sandpack } = useSandpack()
 
-    useEffect(() => {
-      console.log("viewCode", viewCode)
-      if(!viewCode) {
-        sandpack.setActiveFile('App.tsx')
-        
-      }
-    }, [viewCode])
+  useEffect(() => {
+    console.log("viewCode", viewCode)
+    if (!viewCode) {
+      sandpack.setActiveFile('GeneratedApp.tsx')
 
-    useEffect(() => {
-      console.log("error", sandpack.error)
-      if(errorCallback) {
-        errorCallback(sandpack.error?.message.split('\n')[0] || '')
-      }
-    }, [sandpack.error])
+    }
+  }, [viewCode])
 
-    return (
-        <SandpackPreview
-          className={className}
-          showOpenInCodeSandbox={false}
-          showRefreshButton={false}
-        />
-    )
-  }
-  
-  // return (
-  //   <Sandpack
-  //     options={{
-  //       showNavigator: true,
-  //       editorHeight: "80vh",
-  //       showTabs: false,
-  //       ...sharedOptions,
-  //     }}
-  //     files={{
-  //       "App.tsx": code,
-  //       ...sharedFiles,
-  //     }}
-  //     {...sharedProps}
-  //   />
-  // )
-  
+  useEffect(() => {
+    console.log("error", sandpack.error)
+    if (errorCallback) {
+      errorCallback(sandpack.error?.message.split('\n')[0] || '')
+    }
+  }, [sandpack.error])
+
+  return (
+    <SandpackPreview
+      className={className}
+      showOpenInCodeSandbox={false}
+      showRefreshButton={false}
+    />
+  )
+}
+
 
 let sharedOptions: SandpackInternalOptions = {
   externalResources: [
-    "https://unpkg.com/@tailwindcss/ui/dist/tailwind-ui.min.css",
+    "https://cdn.tailwindcss.com",
   ],
   // autoReload: true,
   recompileMode: "delayed",
+  logLevel: SandpackLogLevel.Error
 };
 
 let sharedProps = {
   template: "react-ts",
-  theme: "dark",
   customSetup: {
     dependencies: {
       "lucide-react": "latest",
@@ -155,6 +170,7 @@ let sharedProps = {
       "react-day-picker": "^8.10.1",
       "tailwind-merge": "^2.4.0",
       "tailwindcss-animate": "^1.0.7",
+      "next-themes": "^0.3.0",
       vaul: "^0.9.1",
     },
   },
@@ -211,7 +227,7 @@ let sharedFiles = {
         <script src="https://cdn.tailwindcss.com"></script>
       </head>
       <body>
-        <div id="root"></div>
+        <div id="root" class="dark"></div>
       </body>
     </html>
   `,
