@@ -15,15 +15,15 @@ import {
 } from "@codesandbox/sandpack-react/unstyled";
 import dedent from "dedent";
 import "./code-viewer.css";
-import { useActiveCode } from "@codesandbox/sandpack-react/unstyled";
 
 export default function CodeViewer({
   code,
-  viewCode = false
-  
+  viewCode = false,
+  errorCallback,
 }: {
   code: string;
-  viewCode: boolean;
+  viewCode?: boolean;
+  errorCallback?: (error: string) => void;
 }) {
 
   return (
@@ -39,15 +39,15 @@ export default function CodeViewer({
     >
       <SandpackLayout className="h-full w-full">
        {viewCode &&
-       <SandpackCodeEditor
-       className="h-full w-full"
+       <SandpackCodeViewer
+      //  className="h-full w-full"
         showTabs={false}
         showLineNumbers
-        closableTabs={true}
+        // closableTabs={true}
         wrapContent={true}
         
        /> }
-       <BaseSandpack  className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col justify-center'}/>
+       <BaseSandpack viewCode={viewCode} errorCallback={errorCallback} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col justify-center object-contain'}/>
       </SandpackLayout>
 
     </SandpackProvider>
@@ -55,10 +55,31 @@ export default function CodeViewer({
 }
 
 function BaseSandpack({
-    className
+    className,
+    viewCode,
+    errorCallback
   }: {
     className: string;
+    viewCode: boolean;
+    errorCallback?: (error: string) => void;
   }) {
+    const {sandpack} = useSandpack()
+
+    useEffect(() => {
+      console.log("viewCode", viewCode)
+      if(!viewCode) {
+        sandpack.setActiveFile('App.tsx')
+        
+      }
+    }, [viewCode])
+
+    useEffect(() => {
+      console.log("error", sandpack.error)
+      if(errorCallback) {
+        errorCallback(sandpack.error?.message.split('\n')[0] || '')
+      }
+    }, [sandpack.error])
+
     return (
         <SandpackPreview
           className={className}

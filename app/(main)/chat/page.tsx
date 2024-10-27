@@ -15,6 +15,7 @@ import ShinyButton from '@/components/ui/shiny-button'
 import { useUser } from '@clerk/nextjs'
 import { Version } from '@/components/version'
 import { randomUUID } from 'crypto'
+import ErrorDialogue from '@/components/error-dialogue'
 
 const mockVersions = [
   { id: 'v0', version: 'v0', content: 'generate a sudoku app', imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
@@ -40,6 +41,7 @@ export default function RenderPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [viewCode, setViewCode] = useState(false)
   const [versions, setVersions] = useState<Version[]>([])
+  const [error, setError] = useState<string|undefined>(undefined)
   const { user } = useUser();
   const router = useRouter();
 
@@ -169,6 +171,20 @@ export default function RenderPage() {
     setMessage(suggestion)
   }
 
+  const handleError = () => {
+    setMessage(`Error Occured: ${error}`)
+  }
+  
+  const errorCallback = (errorMessage: string) => {
+    console.log("errorMessage", errorMessage)
+    if(errorMessage !== '' && errorMessage !== error) {
+      setError(errorMessage)
+    }
+    if(errorMessage === '' || !errorMessage) {
+      setError(undefined)
+    }
+  }
+
   const handlePublish = async () => {
     if (!user) {
       console.error('User not authenticated');
@@ -239,9 +255,14 @@ export default function RenderPage() {
 
         {/* Main content */}
         <main className="flex-grow flex flex-col overflow-hidden p-4">
-          <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg">
-            <div className="h-full overflow-auto">
-              {(isLoading) ? <LoadingRipple /> : <CodeViewer code={code.code} viewCode={viewCode} />}
+          <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg relative">
+            <div className="h-full w-full">
+              <CodeViewer errorCallback={errorCallback} code={code.code} viewCode={viewCode} />
+              {error && error !== '' && (
+                <div className="absolute bottom-4 right-4 z-10">
+                  <ErrorDialogue errorMessage={error} onClick={handleError} />
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-4 flex flex-col space-y-2">
