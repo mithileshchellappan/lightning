@@ -18,6 +18,7 @@ import {
 } from "@codesandbox/sandpack-react/unstyled";
 import dedent from "dedent";
 import "./code-viewer.css";
+import ErrorDialogue from "./error-dialogue";
 
 export default function CodeViewer({
   code,
@@ -76,7 +77,6 @@ export default function CodeViewer({
             showLineNumbers
             closableTabs={true}
             wrapContent={true}
-
           />}
         <BaseSandpack viewCode={viewCode} errorCallback={errorCallback} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col'} />
       </SandpackLayout>
@@ -104,19 +104,19 @@ function BaseSandpack({
     }
   }, [viewCode])
 
-  useEffect(() => {
-    console.log("error", sandpack.error)
-    if (errorCallback) {
-      errorCallback(sandpack.error?.message.split('\n')[0] || '')
-    }
-  }, [sandpack.error])
-
   return (
-    <SandpackPreview
-      className={className}
-      showOpenInCodeSandbox={false}
-      showRefreshButton={false}
-    />
+    <>
+      {sandpack.error && sandpack.error.message !== '' && (
+        <div className="absolute bottom-4 right-4 z-10">
+          <ErrorDialogue errorMessage={sandpack.error.message.split('\n')[0]} onClick={() => { errorCallback(sandpack.error.message.split('\n')[0]) }} />
+        </div>
+      )}
+      <SandpackPreview
+        className={className}
+        showOpenInCodeSandbox={false}
+        showRefreshButton={false}
+      />
+    </>
   )
 }
 
@@ -126,8 +126,10 @@ let sharedOptions: SandpackInternalOptions = {
     "https://cdn.tailwindcss.com",
   ],
   // autoReload: true,
-  recompileMode: "delayed",
-  logLevel: SandpackLogLevel.Error
+  recompileMode: "immediate",
+  logLevel: SandpackLogLevel.None,
+  activeFile: "GeneratedApp.tsx",
+  initMode: "immediate",
 };
 
 let sharedProps = {
