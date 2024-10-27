@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import * as shadcnComponents from "@/utils/shadcn-ui-extract";
 import { SandpackLogLevel } from "@codesandbox/sandpack-client";
 import { atomDark } from '@codesandbox/sandpack-themes'
 
 import {
   SandpackCodeEditor,
-  SandpackCodeViewer,
   // Sandpack,
   SandpackInternalOptions,
   SandpackLayout,
@@ -22,12 +21,16 @@ import ErrorDialogue from "./error-dialogue";
 
 export default function CodeViewer({
   code,
-  viewCode = false,
+  screenShotCallback,
   errorCallback,
+  viewCode = false,
+  previewMode = false,
 }: {
   code: string;
   viewCode?: boolean;
+  screenShotCallback?: (data: string) => void;
   errorCallback?: (error: string) => void;
+  previewMode?: boolean;
 }) {
 
   return (
@@ -37,6 +40,7 @@ export default function CodeViewer({
         "App.tsx": `
         import {useEffect, useState} from "react"
         import GeneratedApp from "./GeneratedApp.tsx"
+        import html2canvas from "html2canvas"
 
         export default function App() {
           const [isDarkMode, setIsDarkMode] = useState(false)
@@ -49,8 +53,22 @@ export default function CodeViewer({
             console.log("isDarkMode", isDarkMode)
             return () => darkModeMediaQuery.removeEventListener('change', listener)
           }, [])
+
+          useEffect(()=>{
+            const captureScreenshot = setTimeout(() => {
+              const input = document.getElementById('app')
+              html2canvas(input, { scale: 0.5 }).then(canvas => {
+                console.log("screenshot: ", canvas.toDataURL())
+              })
+            }, 2000)
+
+            return () => clearTimeout(captureScreenshot)
+          },[])
+
           return <div className="h-screen w-screen \${isDarkMode ? 'dark' : ''}">
-            <GeneratedApp />
+            <div id="app" className="h-full w-full flex items-center justify-center">
+              <GeneratedApp />
+            </div>
           </div>
         }
         `,
@@ -70,7 +88,7 @@ export default function CodeViewer({
       options={{ ...sharedOptions }}
       {...sharedProps}
     >
-      <SandpackLayout className="h-full w-full">
+      <SandpackLayout className={previewMode ? 'h-90 w-80' : 'h-full w-full' }>
         {viewCode &&
           <SandpackCodeEditor
             showTabs={false}
@@ -78,7 +96,7 @@ export default function CodeViewer({
             closableTabs={true}
             wrapContent={true}
           />}
-        <BaseSandpack viewCode={viewCode} errorCallback={errorCallback} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col'} />
+        <BaseSandpack screenShotCallback={screenShotCallback} viewCode={viewCode} errorCallback={errorCallback} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col'} />
       </SandpackLayout>
 
     </SandpackProvider>
@@ -88,21 +106,31 @@ export default function CodeViewer({
 function BaseSandpack({
   className,
   viewCode,
+  screenShotCallback,
   errorCallback
 }: {
   className: string;
   viewCode: boolean;
+  screenShotCallback?: (data: string) => void;
   errorCallback?: (error: string) => void;
 }) {
-  const { sandpack } = useSandpack()
+  const { sandpack, listen } = useSandpack()
+  const previewRef = useRef<SandpackPreviewRef>()
 
   useEffect(() => {
-    console.log("viewCode", viewCode)
     if (!viewCode) {
       sandpack.setActiveFile('GeneratedApp.tsx')
-
     }
   }, [viewCode])
+
+  listen((msg) => {
+    console.log("sandpack message", msg.type, msg)
+    if(msg.type === 'console' && screenShotCallback){
+      if(msg.log[0].data[0].startsWith('screenshot: ') && msg.log[0].data[1]){
+        screenShotCallback(msg.log[0].data[1].replaceAll('\n',''))
+      }
+    }
+  })
 
   return (
     <>
@@ -112,6 +140,7 @@ function BaseSandpack({
         </div>
       )}
       <SandpackPreview
+        ref={previewRef}
         className={className}
         showOpenInCodeSandbox={false}
         showRefreshButton={false}
@@ -174,6 +203,7 @@ let sharedProps = {
       "tailwindcss-animate": "^1.0.7",
       "next-themes": "^0.3.0",
       vaul: "^0.9.1",
+      html2canvas: "^1.4.1",
     },
   },
 } as const;

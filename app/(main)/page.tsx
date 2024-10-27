@@ -134,7 +134,7 @@ export default function AIAssistant() {
                   >
                     <Card className="w-full bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 overflow-hidden group">
                       <div className="relative aspect-[4/3]">
-                        <CodeViewer code={app.code} />
+                        <Image src={app.imageUrl} alt={app.name} fill className="object-cover" />
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent">
                           <div className="p-3">
                             <h3 className="font-medium text-sm flex items-center text-white">

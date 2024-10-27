@@ -2,13 +2,15 @@ import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { ModeToggle } from './theme-toggle';
 import { Version } from './version';
-import CodeViewer from './code-viewer';
+import Image from 'next/image';
+import placeholder from '@/public/placeholder.svg'
 
 const VersionSidebar: React.FC<{ versions: Version[] }> = ({ versions }) => {
-
+  console.log("versions", versions)
   return (
     <div className="w-[44px] shrink-0 select-none flex-col bg-white dark:bg-black h-full border-r border-gray-200 dark:border-zinc-800 md:flex">
-      <div className="flex-grow overflow-y-auto py-2 mt-4">
+      <div className="pt-4 flex justify-center text-3xl"><a href="/">⚡️</a></div>
+      <div className="flex-grow overflow-y-auto pt-1 pb-2 mt-4">
         {versions.map((version,index) => (
           <HoverCard key={version.id}
           openDelay={2}
@@ -25,16 +27,24 @@ const VersionSidebar: React.FC<{ versions: Version[] }> = ({ versions }) => {
               </Button>
             </HoverCardTrigger>
             <HoverCardContent 
-              className="w-80 p-0" 
+              className="w-[320px] p-4" 
               side="right"
               sideOffset={12} 
               align="start"
               alignOffset={-10} 
             >
-              <div className="flex flex-col no-scrollbar overflow-hidden pointer-events-none">
-                <CodeViewer code={version.content} />
-                <div className="p-4">
-                  <p className="text-sm font-semibold mb-1">{version.prompt}</p>
+              <div className="space-y-4">
+                <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden border border-border">
+                  <Image
+                    src={version.imageUrl ?? placeholder}
+                    alt={version.prompt}
+                    fill
+                    className="object-cover"
+
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">{version.prompt}</p>
                 </div>
               </div>
             </HoverCardContent>

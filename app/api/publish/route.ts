@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
-    const { name, code, icon, userId } = await request.json()
+    const { name, code, icon, userId, imageUrl } = await request.json()
 
     const publishedApp = await prisma.publishedApp.create({
       data: {
@@ -12,6 +12,7 @@ export async function POST(request: Request) {
         code,
         icon,
         userId,
+        imageUrl
       },
     })
 

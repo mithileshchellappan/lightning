@@ -3,5 +3,6 @@ export interface Version {
     content: string;
     isActive?: boolean;
     prompt: string;
+    imageUrl?: string;
 }
 

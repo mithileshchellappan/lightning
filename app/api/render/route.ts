@@ -8,15 +8,15 @@ export async function POST(request: Request) {
   try {
     const {messages} = await request.json();
     console.log(messages)
-    // var {text} = await generateText({
-    //   model: openai(process.env.AI_MODEL_1 as string),
-    //   system: dedent(GENERATE_PROMPT),
-    //   messages: messages.map((message: any)=>({
-    //     ...message,
-    //     content: message.role ==='user' ? message.content + "\n PLEASE ONLY RETURN CODE STARTING WITH <lightningArtifact ...>...</lightningArtifact>, NO NEED BACKTICKS WITH LANGUAGE NAME" : dedent(message.content)
-    //   }))
-    // });
-    var text = EXAMPLE_CODE
+    var {text} = await generateText({
+      model: openai(process.env.AI_MODEL_1 as string),
+      system: dedent(GENERATE_PROMPT),
+      messages: messages.map((message: any)=>({
+        ...message,
+        content: message.role ==='user' ? message.content + "\n PLEASE ONLY RETURN CODE STARTING WITH <lightningArtifact ...>...</lightningArtifact>, NO NEED BACKTICKS WITH LANGUAGE NAME. PLEASE MAKE SURE YOUR APP SUPPORTS DARK MODE" : dedent(message.content)
+      }))
+    });
+    // var text = EXAMPLE_CODE
     text = dedent(text)
     console.log(text)
     console.log("GENERATED AI Response")
@@ -47,12 +47,12 @@ export async function POST(request: Request) {
   }
 }
 
-const EXAMPLE_CODE = `<lightningArtifact name="todo" icon="Puzzle">  import  useState } from 'react';\nimport { Input } from \"/components/ui/input\";\nimport { Button } from \"/components/ui/button\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"/components/ui/card\";\n\nconst TodoApp = () => {\nconst [todos, setTodos] = useState([]);\nconst [newTodo, setNewTodo] = useState('');\n\nconst handleSubmit = (e) => {\n  e.preventDefault();\n  if (newTodo.trim() !== '') {\n    setTodos([...todos, { text: newTodo, completed: false }]);\n    setNewTodo('');\n  }\n};\n\nconst handleToggleCompleted = (index) => {\n  setTodos(todos.map((todo, i) => {\n    if (i === index) {\n      return { ...todo, completed: !todo.completed };\n    }\n    return todo;\n  }));\n};\n\nconst handleDelete = (index) => {\n  setTodos(todos.filter((todo, i) => i !== index));\n};\n\nreturn (\n  <Card className=\"max-w-md mx-auto mt-10\">\n    <CardHeader>\n      <CardTitle>Todo App</CardTitle>\n    </CardHeader>\n    <CardContent>\n      <form onSubmit={handleSubmit} className=\"flex space-x-2 mb-4\">\n        <Input\n          type=\"text\"\n          value={newTodo}\n          onChange={(e) => setNewTodo(e.target.value)}\n          placeholder=\"Add new todo\"\n          className=\"w-full\"\n        />\n        <Button type=\"submit\">Add</Button>\n      </form>\n      <ul>\n        {todos.map((todo, index) => (\n          <li key={index} className=\"flex items-center space-x-2 mb-2\">\n            <input\n              type=\"checkbox\"\n              checked={todo.completed}\n              onChange={() => handleToggleCompleted(index)}\n            />\n            <span className={todo.completed ? 'line-through' : ''}>{todo.text}</span>\n            <Button variant=\"destructive\" onClick={() => handleDelete(index)}>Delete</Button>\n          </li>\n        ))}\n      </ul>\n    </CardContent>\n  </Card>\n);\n};\n\nexport default TodoApp;
+const EXAMPLE_CODE = `<lightningArtifact name="todo" icon="Puzzle">  import { useState } from 'react';\nimport { Input } from \"/components/ui/input\";\nimport { Button } from \"/components/ui/button\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"/components/ui/card\";\n\nconst TodoApp = () => {\nconst [todos, setTodos] = useState([]);\nconst [newTodo, setNewTodo] = useState('');\n\nconst handleSubmit = (e) => {\n  e.preventDefault();\n  if (newTodo.trim() !== '') {\n    setTodos([...todos, { text: newTodo, completed: false }]);\n    setNewTodo('');\n  }\n};\n\nconst handleToggleCompleted = (index) => {\n  setTodos(todos.map((todo, i) => {\n    if (i === index) {\n      return { ...todo, completed: !todo.completed };\n    }\n    return todo;\n  }));\n};\n\nconst handleDelete = (index) => {\n  setTodos(todos.filter((todo, i) => i !== index));\n};\n\nreturn (\n  <Card className=\"max-w-md mx-auto mt-10\">\n    <CardHeader>\n      <CardTitle>Todo App</CardTitle>\n    </CardHeader>\n    <CardContent>\n      <form onSubmit={handleSubmit} className=\"flex space-x-2 mb-4\">\n        <Input\n          type=\"text\"\n          value={newTodo}\n          onChange={(e) => setNewTodo(e.target.value)}\n          placeholder=\"Add new todo\"\n          className=\"w-full\"\n        />\n        <Button type=\"submit\">Add</Button>\n      </form>\n      <ul>\n        {todos.map((todo, index) => (\n          <li key={index} className=\"flex items-center space-x-2 mb-2\">\n            <input\n              type=\"checkbox\"\n              checked={todo.completed}\n              onChange={() => handleToggleCompleted(index)}\n            />\n            <span className={todo.completed ? 'line-through' : ''}>{todo.text}</span>\n            <Button variant=\"destructive\" onClick={() => handleDelete(index)}>Delete</Button>\n          </li>\n        ))}\n      </ul>\n    </CardContent>\n  </Card>\n);\n};\n\nexport default TodoApp;
 </lightningArtifact>
 `
 
 var GENERATE_PROMPT = `
-    You are a senior frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully
+    You are Lightning, a senior frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully
     
     - Start with tag <lightningArtifact name="..." icon="...">...</lightningArtifact>
     - The name should be the name of the app generated.
@@ -71,6 +71,10 @@ var GENERATE_PROMPT = `
     - Please ONLY return the full React code starting with the imports, nothing else. It's very important for my job that you only return the React code with imports.
     - ONLY IF the user asks for a dashboard, graph or chart, the recharts library is available to be imported, e.g. \`import { LineChart, XAxis, ... } from "recharts"\` & \`<LineChart ...><XAxis dataKey="name"> ...\`. Please only use this when needed.
     - ALWAYS END WITH </lightningArtifact>
+    - YOUR APP SHOULD ALWAYS HAVE h-full AND w-full ON THE ROOT DIV
+    - YOUR APP SHOULD NOT HAVE ANY SCROLLBARS
+    - YOUR APP SHOULD BE ADAPTIVE TO THEME CHANGES. DO NOT ADD A DARK MODE TOGGLE AS THIS WILL BE HANDLED EXTERNALLY
+    - NEVER APP PLACE HOLDERS TO YOUR APP. ALL FUNCTIONS SHOULD BE IMPLEMENTED.
     There are some prestyled components available for use. Please use your best judgement to use any of these components if the app calls for one.
 
     Here are the components that are available, along with how to import them, and how to use them:
@@ -98,7 +102,10 @@ var GENERATE_PROMPT = `
         `,
       )
       .join("\n")}    
-
+    - YOUR APP SHOULD ALWAYS HAVE h-full AND w-full ON THE ROOT DIV
+    - YOUR APP SHOULD NOT HAVE ANY SCROLLBARS
+    - YOUR APP SHOULD BE ADAPTIVE TO THEME CHANGES. DO NOT ADD A DARK MODE TOGGLE AS THIS WILL BE HANDLED EXTERNALLY
+    - NEVER APP PLACE HOLDERS TO YOUR APP. ALL FUNCTIONS SHOULD BE IMPLEMENTED.
     `
 
   

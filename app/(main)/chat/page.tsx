@@ -13,7 +13,8 @@ import Ripple from '@/components/ui/ripple'
 import ShinyButton from '@/components/ui/shiny-button'
 import { useUser } from '@clerk/nextjs'
 import { Version } from '@/components/version'
-import ErrorDialogue from '@/components/error-dialogue'
+import placeholder from '@/public/placeholder.svg'
+import Image from 'next/image'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,7 +67,6 @@ export default function RenderPage() {
           prompt: query
         }
       ])
-
     } catch (error) {
       console.error('Error fetching code:', error)
       setCode({code: errorCode, name: 'Error occurred', icon: ''})
@@ -173,6 +173,13 @@ export default function RenderPage() {
     setMessage(`Error Occured: ${errorMessage}`)
   }
 
+  const screenShotCallback = (imageUrl: string) => {
+    console.log("imageUrl", imageUrl)
+    let lastVersion = versions[versions.length - 1]
+    versions[versions.length - 1] = {...lastVersion, imageUrl}
+    setVersions([...versions])
+  }
+
   const handlePublish = async () => {
     if (!user) {
       console.error('User not authenticated');
@@ -195,6 +202,7 @@ export default function RenderPage() {
           code: code.code,
           icon: code.icon,
           userId: user.id,
+          imageUrl: versions[versions.length - 1].imageUrl
         }),
       });
 
@@ -213,7 +221,6 @@ export default function RenderPage() {
       console.error('Error publishing app:', error);
     }
   };
-
   return (
     <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
      <div className="hidden md:block">
@@ -222,7 +229,7 @@ export default function RenderPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between ">
-            <h1 className="text-lg ml-6 sm:text-2xl font-bold truncate">{code.name ?? 'Lightning'}</h1>
+            <h1 className="text-lg ml-6 sm:text-2xl font-bold truncate">{question}</h1>
             <div className='flex items-center'>
             <TooltipProvider>
               <div className="flex box-content h-6 items-center gap-2 rounded-md border border-gs-gray-alpha-400 bg-white dark:bg-zinc-800 p-1 ml-auto">
@@ -253,7 +260,7 @@ export default function RenderPage() {
               <LoadingRipple /> :
               (
                 <div className="h-full w-full">
-                  <CodeViewer errorCallback={errorCallback} code={code.code} viewCode={viewCode} />
+                  <CodeViewer errorCallback={errorCallback} code={code.code} viewCode={viewCode} screenShotCallback={screenShotCallback} />
               </div>
             )}
           </div>
@@ -333,7 +340,7 @@ const HistorySheet = ({versions}: {versions: Version[]}) => (
         {versions.map((version,index) => (
           <div key={version.id} className="flex items-center pb-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
             <div className="relative w-16 h-16">
-              <CodeViewer code={version.content} />
+              <Image src={version.imageUrl ?? placeholder} alt={version.prompt} fill className="object-cover" />
             </div>
             <div className="flex-1 pl-2">
               <p className="font-semibold">v{index}</p>

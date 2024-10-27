@@ -16,6 +16,7 @@ model PublishedApp {
   code      String
   icon      String
   userId    String
+  imageUrl  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
