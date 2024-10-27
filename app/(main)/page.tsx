@@ -62,7 +62,7 @@ export default function AIAssistant() {
     }
     if (question.trim()) {
       const chatId = Date.now().toString() // Generate a unique ID based on timestamp
-      router.push(`/chat/${chatId}?question=${encodeURIComponent(question)}`)
+      router.push(`/chat?question=${encodeURIComponent(question)}`)
     }
   }
 

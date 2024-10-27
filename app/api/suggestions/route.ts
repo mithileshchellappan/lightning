@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const {code} = await request.json();
     
     var stream = await streamText({
-      model: openai('Meta-Llama-3.2-1B-Instruct'),
+      model: openai(process.env.AI_MODEL_1 as string),
       system: dedent(GENERATE_PROMPT),
       prompt: dedent(code),
     });

@@ -1,19 +1,20 @@
 'use client'
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import CodeViewer from '@/components/code-viewer'
 import RevisionInput from '@/components/RevisionInput'
-import VersionSidebar, { Version } from '@/components/VersionSidebar'
+import VersionSidebar from '@/components/VersionSidebar'
 import { Button } from "@/components/ui/button"
-import { History, ArrowUpRight, Code, RefreshCcw } from 'lucide-react'
+import { History, ArrowUpRight, Code } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Image from 'next/image'
 import Ripple from '@/components/ui/ripple'
-import { SandpackPreviewRef } from '@codesandbox/sandpack-react/unstyled'
 import ShinyButton from '@/components/ui/shiny-button'
 import { useUser } from '@clerk/nextjs'
+import { Version } from '@/components/version'
+import { randomUUID } from 'crypto'
 
 const mockVersions = [
   { id: 'v0', version: 'v0', content: 'generate a sudoku app', imageUrl: '/path/to/image0.png', timestamp: '2 hours ago' },
@@ -25,6 +26,8 @@ const mockVersions = [
 
 const errorCode = 'export default function App() { return (<div>Error Fetching Code</div>) }'
 
+export type Message = { role: string, content: string }
+
 export default function RenderPage() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -34,9 +37,9 @@ export default function RenderPage() {
   const [code, setCode] = useState<{code: string, name?: string, icon?: string}>({code: '', name: undefined, icon: undefined})
   const [isLoading, setIsLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
-  const [messages, setMessages] = useState<{ role: string, content: string }[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
   const [viewCode, setViewCode] = useState(false)
-  const [versions, setVersions] = useState<Version[]>(mockVersions)
+  const [versions, setVersions] = useState<Version[]>([])
   const { user } = useUser();
   const router = useRouter();
 
@@ -54,8 +57,17 @@ export default function RenderPage() {
       const result = await response.json()
       console.log("result", result)
       setCode(result)
-      setMessages([{ role: 'user', content: query }, { role: 'assistant', content: result }])
+      setMessages([{ role: 'user', content: query }, { role: 'assistant', content: result.code }])
       fetchSuggestions(result.code, query)
+      setMessage('')
+      setVersions([
+        {
+          id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+          content: result.code,
+          prompt: query
+        }
+      ])
+
     } catch (error) {
       console.error('Error fetching code:', error)
       setCode({code: errorCode, name: 'Error occurred', icon: ''})
@@ -81,7 +93,15 @@ export default function RenderPage() {
       console.log("Updating Code")
       setViewCode(false)
       setMessages([...messages, { role: 'assistant', content: code.code }])
-      fetchSuggestions(code.code, query)
+      fetchSuggestions(result.code, query)
+      setVersions([
+        ...versions,
+        {
+          id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+          content: result.code,
+          prompt: query
+        }
+      ])
     } catch (error) {
       console.error('Error fetching code:', error)
       setCode({code: errorCode, name: code.name, icon: code.icon})
@@ -103,7 +123,6 @@ export default function RenderPage() {
       while (true) {
         const { done, value } = await reader?.read()
         if (done) break
-        console.log(`value: ${value} previousLine: ${previousLine}`)
         previousLine += value
         if (previousLine.includes('<suggestion>') && previousLine.includes('</suggestion>')) {
           const suggestion = previousLine.substring(
@@ -126,6 +145,7 @@ export default function RenderPage() {
     }
     if (question) {
       fetchCode(question)
+      setMessage(question)
       question = ''
     }
     console.log('running effect')
@@ -147,18 +167,6 @@ export default function RenderPage() {
 
   const handleSuggestionClick = (suggestion: string) => {
     setMessage(suggestion)
-  }
-
-  const handleUpdate = (error: string) => {
-    // if (errorCount < 4) {
-    //   setErrorCount(prevCount => prevCount + 1);
-    //   if (messages.length > 0 && !isLoading) {
-    //     updateCode("An error occurred: " + error);
-    //   }
-    // }
-  };
-
-  const handleError = (error: string) => {
   }
 
   const handlePublish = async () => {
@@ -192,15 +200,16 @@ export default function RenderPage() {
 
       const result = await response.json();
       console.log('App published successfully:', result);
-      // You might want to show a success message to the user here
     } catch (error) {
       console.error('Error publishing app:', error);
-      // You might want to show an error message to the user here
     }
   };
 
   return (
     <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
+     <div className="hidden md:block">
+        <VersionSidebar versions={versions} />
+      </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between ">
@@ -219,6 +228,8 @@ export default function RenderPage() {
                     <p>View Code</p>
                   </TooltipContent>
                 </Tooltip>
+                <div className="shrink-0 bg-gray-200 dark:bg-zinc-700 w-[1px] h-5 md:hidden"></div>
+                <HistorySheet versions={versions} />
               </div>
             </TooltipProvider>
             {/* @ts-ignore */}
@@ -292,28 +303,13 @@ const HistorySheet = ({versions}: {versions: Version[]}) => (
     >
       <div className="flex flex-col space-y-4">
         {versions.map((version,index) => (
-          <div key={version.id} className="flex items-center space-x-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+          <div key={version.id} className="flex items-center pb-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
             <div className="relative w-16 h-16">
-              {version.imageUrl.startsWith('data:image/png;base64,') ? (
-                <img
-                  src={version.imageUrl}
-                  alt={version.content}
-                  className="w-full h-full object-cover rounded-md"
-                />
-              ) : (
-                <Image
-                  src={version.imageUrl}
-                  alt={version.content}
-                  layout="fill"
-                  objectFit="cover"
-                  className="rounded-md"
-                />
-              )}
+              <CodeViewer code={version.content} />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 pl-2">
               <p className="font-semibold">v{index}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{version.content}</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500">{version.timestamp}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{version.prompt}</p>
             </div>
           </div>
         ))}
