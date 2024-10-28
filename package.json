@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "install": "npx prisma generate && next build && next start",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.68",
