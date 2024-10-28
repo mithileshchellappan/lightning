@@ -35,24 +35,19 @@ export async function POST(request: Request) {
     const codeMatch = text.match(/<lightningArtifact[^>]*>([\s\S]*?)(?:<\/lightningArtifact>|export default[\s\S]*$)/)
     let code = codeMatch ? codeMatch[1].trim() : ''
 
-    // Check if code has any export statement
     const hasExport = /export\s+(?:default\s+)?(?:function|const|class|let|var)/.test(code)
     
     if (!hasExport) {
-      // Find the component name by looking for function/const declarations including arrow functions
       const componentMatch = code.match(/(?:function|const|class|let|var)\s+([A-Z][A-Za-z0-9]*)|const\s+([A-Z][A-Za-z0-9]*)\s*=\s*\(\s*\)\s*=>/);
       
       let componentName;
       if (componentMatch) {
-        // Get the name from either regular function or arrow function match
         componentName = componentMatch[1] || componentMatch[2];
       } else {
-        // If no component name found, check if it's an anonymous arrow function
         const isArrowComponent = /const\s*=\s*\(\s*\)\s*=>/.test(code);
         componentName = isArrowComponent ? 'Component' : 'Component';
       }
       
-      // Add export default statement at the end
       code = `${code}\n\nexport default ${componentName};`
     }
 
@@ -65,7 +60,7 @@ export async function POST(request: Request) {
     return NextResponse.json(result)
   } catch (error) {
     console.error('Error rendering code:', error);
-    return NextResponse.json({ error: 'Error rendering the component', status: 500 });
+    return NextResponse.json({ error: 'Error rendering the component', status: 500 }, {status: 500});
   }
 }
 

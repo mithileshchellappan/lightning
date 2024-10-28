@@ -78,6 +78,10 @@ export default function RenderPage() {
         body: JSON.stringify({ messages: requestMessages, model, isVision }),
       });
 
+      if (!response.ok || !response.body || response.status !== 200) {
+        throw new Error('No response body');
+      }
+
       const result = await response.json();
       console.log("result", result);
 
