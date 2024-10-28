@@ -2,7 +2,7 @@ import {createOpenAI} from '@ai-sdk/openai';
 import OpenAI from 'openai';
 
 const openai = createOpenAI({
-    baseURL: 'https://api.sambanova.ai/v1',
+    baseURL: process.env.SAMBANOVA_BASE_URL,
     apiKey: process.env.SAMBANOVA_API_KEY,
 });
 

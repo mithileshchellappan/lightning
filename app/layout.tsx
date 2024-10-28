@@ -4,6 +4,7 @@ import "./globals.css";
 import { PWA } from "./pwa";
 import { ThemeProvider } from '../context/ThemeProvider'
 import { ClerkProvider } from "@clerk/nextjs";
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -16,8 +17,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "My PWA App",
-  description: "A Progressive Web App built with Next.js",
+  title: "Lightning Apps",
+  description: "Build apps in Lightning Speed",
   manifest: "/manifest.json",
   themeColor: "#ffffff",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
@@ -39,8 +40,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
             <PWA />
-            
-            {children}
+              {children}
         </ThemeProvider>
       </body>
       </html>

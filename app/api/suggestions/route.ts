@@ -1,7 +1,6 @@
 import openai from '@/utils/openai';
 import { NextResponse } from 'next/server';
-import { StreamingTextResponse, streamText } from 'ai';
-import shadcnComponents from '@/utils/shadcn-ai-extract';
+import { streamText } from 'ai';
 import dedent from 'dedent';
 
 export async function POST(request: Request) {
@@ -9,7 +8,7 @@ export async function POST(request: Request) {
     const {code} = await request.json();
     
     var stream = await streamText({
-      model: openai(process.env.AI_MODEL_1 as string),
+      model: openai(process.env.AI_MODEL_2 as string),
       system: dedent(GENERATE_PROMPT),
       prompt: dedent(code),
     });

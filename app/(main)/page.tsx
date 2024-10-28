@@ -8,14 +8,13 @@ import { Card } from "@/components/ui/card"
 import * as LucideIcons from "lucide-react"
 import { LucideIcon } from 'lucide-react'
 import Image from 'next/image'
-import { RainbowButton } from '@/components/ui/rainbow-button'
 import FlickeringGrid from '@/components/ui/flickering-grid'
 import AnimatedShinyText from '@/components/ui/animated-shiny-text'
 import ChatInput from '@/components/chat-input'
 import { ModeToggle } from '@/components/theme-toggle'
 import GradualSpacing from '@/components/ui/gradual-spacing'
 import { useClerk, UserButton, useUser } from '@clerk/nextjs'
-import CodeViewer from '@/components/code-viewer'
+import { Models } from '@/lib/utils'
 
 interface PublishedApp {
   id: string;
@@ -56,14 +55,18 @@ export default function AIAssistant() {
     }
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = ({imageId, model=Models[0]}: {imageId?: string, model: typeof Models[0]}) => {
+    console.log(imageId, model)
     if(!isSignedIn) {
       clerk.openSignIn();
       return;
     }
     if (question.trim()) {
-      const chatId = Date.now().toString() // Generate a unique ID based on timestamp
-      router.push(`/chat?question=${encodeURIComponent(question)}`)
+      if(imageId) {
+        router.push(`/chat?question=${encodeURIComponent(question)}&imageId=${encodeURIComponent(imageId)}&model=${encodeURIComponent(model.value)}&isVision=${encodeURIComponent(model.isVisionEnabled)}`)
+      } else {
+        router.push(`/chat?question=${encodeURIComponent(question)}&model=${encodeURIComponent(model.value)}`)
+      }
     }
   }
 
@@ -105,17 +108,13 @@ export default function AIAssistant() {
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex-grow">
               <ChatInput
+                handleGenerate={handleGenerate}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Generate a Sudoku App"
               />
             </div>
-            <RainbowButton
-              className="h-14 px-6 text-white dark:text-black text-lg font-medium sm:w-auto w-full"
-              onClick={handleGenerate}
-            >
-              Generate
-            </RainbowButton>
+            
           </div>
           {isSignedIn && savedApps.length > 0 && (
           <div>

@@ -1,6 +1,6 @@
 'use client'
 
-import {useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import CodeViewer from '@/components/code-viewer'
 import RevisionInput from '@/components/RevisionInput'
@@ -24,93 +24,97 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { CoreMessage, CoreUserMessage, UserContent } from 'ai'
 
-const errorCode = 'export default function App() { return (<div>Error Fetching Code</div>) }'
+const errorCode = `export default function App() {
+  return (
+    <div>Something went wrong. Please try again.</div>
+  );
+}`
 
-export type Message = { role: string, content: string }
 
 export default function RenderPage() {
   const searchParams = useSearchParams()
   let question = searchParams.get('question') || ''
+  let imageId = searchParams.get('imageId')
+  let model = searchParams.get('model')
+  let isVision = searchParams.get('isVision')
   const [message, setMessage] = useState('')
-  const [code, setCode] = useState<{code: string, name?: string, icon?: string}>({code: '', name: undefined, icon: undefined})
+  const [code, setCode] = useState<{ code: string, name?: string, icon?: string }>({ code: '', name: undefined, icon: undefined })
   const [isLoading, setIsLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<CoreMessage[]>([])
   const [viewCode, setViewCode] = useState(false)
   const [versions, setVersions] = useState<Version[]>([])
   const { user } = useUser();
   const router = useRouter();
   const [showPublishAlert, setShowPublishAlert] = useState(false)
 
+  async function getImage(imageId: string) {
+    const fetchedImage = await fetch(`/api/image?id=${imageId}`).then(res => res.json())
+    return fetchedImage.imageUrl
+  }
 
-  async function fetchCode(query: string) {
-    setIsLoading(true)
+
+  async function handleCodeRequest(query: string, imageId?: string, isUpdate = false) {
+    setIsLoading(true);
     try {
+      const userContent: UserContent = [{ type: 'text', text: query }]
+      if(imageId) {
+        const imageUrl = await getImage(imageId)
+        userContent.push({ type: 'image', image: imageUrl })
+      }
+      const userMessage: CoreUserMessage = { role: 'user', content: userContent }
+     
+      const requestMessages: CoreMessage[] = isUpdate
+        ? [...messages, userMessage]
+        : [userMessage];
+
       const response = await fetch('/api/render', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: [{ role: 'user', content: query }] }),
-      })
-      const result = await response.json()
-      console.log("result", result)
-      setCode(result)
-      setMessages([{ role: 'user', content: query }, { role: 'assistant', content: result.code }])
-      fetchSuggestions(result.code, query)
-      setMessage('')
-      setVersions([
+        body: JSON.stringify({ messages: requestMessages, model, isVision }),
+      });
+
+      const result = await response.json();
+      console.log("result", result);
+
+      setCode(result);
+      setMessage('');
+      setMessages([...messages, { role: 'assistant', content: [{ type: 'text', text: result.code }] }]);
+      // fetchSuggestions(result.code);
+
+      setVersions(prevVersions => [
+        ...prevVersions,
         {
           id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
           content: result.code,
-          prompt: query
-        }
-      ])
-    } catch (error) {
-      console.error('Error fetching code:', error)
-      setCode({code: errorCode, name: 'Error occurred', icon: ''})
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  async function updateCode(query: string) {
-    setIsLoading(true)
-    console.log("Loading" + isLoading)
-    try {
-      const response = await fetch('/api/render', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+          prompt: query,
         },
-        body: JSON.stringify({ messages: [...messages, { role: "user", content: query }] }),
-      })
-      const result = await response.json()
-      setCode(result)
-      setMessage('')
-      console.log("Updating Code")
-      setViewCode(false)
-      setMessages([...messages, { role: 'assistant', content: code.code }])
-      fetchSuggestions(result.code, query)
-      setVersions([
-        ...versions,
-        {
-          id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-          content: result.code,
-          prompt: query
-        }
-      ])
+      ]);
+
+      if (isUpdate) {
+        setViewCode(false);
+      }
     } catch (error) {
-      console.error('Error fetching code:', error)
-      setCode({code: errorCode, name: code.name, icon: code.icon})
+      console.error('Error fetching code:', error);
+      setCode({ code: errorCode, name: 'Error occurred', icon: '' });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
+  function fetchCode(query: string, imageId?: string) {
+    handleCodeRequest(query, imageId);
+  }
 
-  async function fetchSuggestions(code: string, query: string) {
+  function updateCode(query: string, imageId?: string) {
+    handleCodeRequest(query, imageId, true);
+  }
+
+  async function fetchSuggestions(code: string) {
     try {
       const response = await fetch('/api/suggestions', {
         method: 'POST',
@@ -138,21 +142,17 @@ export default function RenderPage() {
   }
 
   useEffect(() => {
-    if(!user) {
+    if (!user) {
       router.push('/')
       return;
     }
     if (question) {
-      fetchCode(question)
+      fetchCode(question, imageId)
       setMessage(question)
       question = ''
     }
     console.log('running effect')
   }, [question])
-
-  useEffect(() => {
-    console.log("ver",versions)
-  }, [versions])
 
   const handleSend = () => {
     updateCode(message)
@@ -167,7 +167,7 @@ export default function RenderPage() {
   const handleSuggestionClick = (suggestion: string) => {
     setMessage(suggestion)
   }
-  
+
   const errorCallback = (errorMessage: string) => {
     console.log("errorMessage", errorMessage)
     setMessage(`Error Occured: ${errorMessage}`)
@@ -176,7 +176,7 @@ export default function RenderPage() {
   const screenShotCallback = (imageUrl: string) => {
     console.log("imageUrl", imageUrl)
     let lastVersion = versions[versions.length - 1]
-    versions[versions.length - 1] = {...lastVersion, imageUrl}
+    versions[versions.length - 1] = { ...lastVersion, imageUrl }
     setVersions([...versions])
   }
 
@@ -212,10 +212,10 @@ export default function RenderPage() {
 
       const result = await response.json();
       console.log('App published successfully:', result);
-      
+
       const appUrl = `${window.location.origin}/app/${result.id}`;
       await navigator.clipboard.writeText(appUrl);
-      
+
       setShowPublishAlert(true);
     } catch (error) {
       console.error('Error publishing app:', error);
@@ -223,14 +223,14 @@ export default function RenderPage() {
   };
   return (
     <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
-     <div className="hidden md:block">
+      <div className="hidden md:block">
         <VersionSidebar versions={versions} />
       </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between ">
-            <h1 className="text-lg ml-6 sm:text-2xl font-bold truncate">{code.name ?? ''}</h1>
-            <div className='flex items-center'>
+          <h1 className="text-lg ml-6 sm:text-2xl font-bold truncate">{code.name ?? ''}</h1>
+          <div className='flex items-center'>
             <TooltipProvider>
               <div className="flex box-content h-6 items-center gap-2 rounded-md border border-gs-gray-alpha-400 bg-white dark:bg-zinc-800 p-1 ml-auto">
                 <Tooltip>
@@ -259,10 +259,10 @@ export default function RenderPage() {
             {isLoading ?
               <LoadingRipple /> :
               (
-                <div className="h-full w-full">
+                <div className="h-full w-full scroll-auto">
                   <CodeViewer errorCallback={errorCallback} code={code.code} viewCode={viewCode} screenShotCallback={screenShotCallback} />
-              </div>
-            )}
+                </div>
+              )}
           </div>
           <div className="mt-4 flex flex-col space-y-2">
             {suggestions.length > 0 && (

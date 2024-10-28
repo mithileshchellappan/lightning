@@ -94,7 +94,7 @@ export default function CodeViewer({
             showTabs={false}
             showLineNumbers
             closableTabs={true}
-            wrapContent={true}
+            wrapContent={false}
           />}
         <BaseSandpack screenShotCallback={screenShotCallback} viewCode={viewCode} errorCallback={errorCallback} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col'} />
       </SandpackLayout>
@@ -143,7 +143,7 @@ function BaseSandpack({
         ref={previewRef}
         className={className}
         showOpenInCodeSandbox={false}
-        showRefreshButton={false}
+        showRefreshButton={true}
       />
     </>
   )
