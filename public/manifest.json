@@ -1,7 +1,7 @@
 {
-  "name": "My PWA App",
-  "short_name": "PWA App",
-  "description": "A Progressive Web App built with Next.js",
+  "name": "Lightning Apps",
+  "short_name": "Lightning Apps",
+  "description": "Generate Apps in ⚡️ Speed",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

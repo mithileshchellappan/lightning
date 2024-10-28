@@ -229,7 +229,7 @@ export default function RenderPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between ">
-            <h1 className="text-lg ml-6 sm:text-2xl font-bold truncate">{question}</h1>
+            <h1 className="text-lg ml-6 sm:text-2xl font-bold truncate">{code.name ?? ''}</h1>
             <div className='flex items-center'>
             <TooltipProvider>
               <div className="flex box-content h-6 items-center gap-2 rounded-md border border-gs-gray-alpha-400 bg-white dark:bg-zinc-800 p-1 ml-auto">
@@ -316,7 +316,7 @@ export default function RenderPage() {
 const LoadingRipple = () => {
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-background md:shadow-xl">
-        <p className="z-10 whitespace-pre-wrap text-center text-5xl font-medium tracking-tighter text-white darK: ">
+        <p className="z-10 whitespace-pre-wrap text-center text-5xl font-mono font-medium tracking-tighter text-white darK: ">
           Generating
         </p>
         <Ripple />

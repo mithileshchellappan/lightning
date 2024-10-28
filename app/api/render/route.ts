@@ -1,6 +1,6 @@
 import openai from '@/utils/openai';
 import { NextResponse } from 'next/server';
-import { generateText, StreamingTextResponse, streamText } from 'ai';
+import { generateText } from 'ai';
 import shadcnComponents from '@/utils/shadcn-ai-extract';
 import dedent from 'dedent';
 
@@ -75,6 +75,8 @@ var GENERATE_PROMPT = `
     - YOUR APP SHOULD NOT HAVE ANY SCROLLBARS
     - YOUR APP SHOULD BE ADAPTIVE TO THEME CHANGES. DO NOT ADD A DARK MODE TOGGLE AS THIS WILL BE HANDLED EXTERNALLY
     - NEVER APP PLACE HOLDERS TO YOUR APP. ALL FUNCTIONS SHOULD BE IMPLEMENTED.
+    - You are given an array of messages. When user requires a change, make sure to update code accordingly based on previous changes as well. Do not ignore previous changes.
+    - ALWAYS USE LOCAL STORAGE TO PERSIST STATE. FOR EXAMPLE A TODO APP SHOULD PERSIST THE TODO LIST ACROSS RELOADS.
     There are some prestyled components available for use. Please use your best judgement to use any of these components if the app calls for one.
 
     Here are the components that are available, along with how to import them, and how to use them:

@@ -25,6 +25,7 @@ interface PublishedApp {
   userId: string;
   createdAt: string;
   updatedAt: string;
+  imageUrl: string;
 }
 
 export default function AIAssistant() {
@@ -73,7 +74,7 @@ export default function AIAssistant() {
   return (
     <div className="min-h-screen relative bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
       <FlickeringGrid
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 h-screen w-screen"
         color={resolvedTheme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)"}
         maxOpacity={0.1}
       />
@@ -98,7 +99,7 @@ export default function AIAssistant() {
             </AnimatedShinyText>
           </div>
 
-          <GradualSpacing text="Generate Apps in ⚡️ Speed" className="text-4xl sm:text-5xl font-bold text-center"/>
+          <GradualSpacing text="Generate Apps in ⚡️ Speed" className="text-xl sm:text-5xl font-bold text-center"/>
             
 
           <div className="flex flex-col sm:flex-row gap-2">
