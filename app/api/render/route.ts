@@ -46,6 +46,9 @@ export async function POST(request: Request) {
     // Extract code from inside lightningArtifact tag or up to export default
     const codeMatch = text.match(/<lightningArtifact[^>]*>([\s\S]*?)(?:<\/lightningArtifact>*$)/)
     let code = codeMatch ? codeMatch[1].trim() : ''
+    code = code.replaceAll('<script>', '')
+    code = code.replaceAll('</script>', '')
+    code = code.replaceAll('\\n', '\n')
 
     const result = {
       code,

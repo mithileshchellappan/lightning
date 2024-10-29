@@ -59,7 +59,7 @@ export default function RenderPage() {
   async function handleCodeRequest(query: string, imageId?: string, isUpdate = false) {
     setIsLoading(true);
     try {
-      const userContent: ChatCompletionContentPart[] = [{ type: 'text', text: query + `\n Reply only the react component starting with <lightningArtifact and ending with </lightningArtifact>. IMPORTANT: DO NOT REPLY IN PLAIN TEXT. DO NOT ADD ANY COMMENTS. ONLY REPLY THE FULL EXPORTED REACT CODE. REACT CODE MUST BE A FULL COMPONENT, LIKE export default function GeneratedApp() { ... }` }]
+      const userContent: ChatCompletionContentPart[] = [{ type: 'text', text: query + `\n Reply only the react component starting with <lightningArtifact and ending with </lightningArtifact>. IMPORTANT: DO NOT REPLY IN PLAIN TEXT. DO NOT ADD ANY COMMENTS. \n IMPORTANT: ONLY REPLY THE FULL EXPORTED REACT CODE. REACT CODE MUST BE A FULL COMPONENT, LIKE export default function GeneratedApp() { ... }` }]
       if(imageId) {
         const imageUrl = await getImage(imageId)
         userContent.push({ type: 'image_url', image_url: {url: imageUrl, detail: 'auto'}  })
@@ -88,7 +88,7 @@ export default function RenderPage() {
       setCode(result);
       setMessage('');
       setMessages([...messages, { role: 'assistant', content: [{ type: 'text', text: result.code }] }]);
-      // fetchSuggestions(result.code);
+      fetchSuggestions(result.code);
 
       setVersions(prevVersions => [
         ...prevVersions,
