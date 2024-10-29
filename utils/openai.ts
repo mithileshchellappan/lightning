@@ -6,4 +6,9 @@ const openai = createOpenAI({
     apiKey: process.env.SAMBANOVA_API_KEY,
 });
 
+export const openaiClient = new OpenAI({
+    baseURL: process.env.SAMBANOVA_BASE_URL,
+    apiKey: process.env.SAMBANOVA_API_KEY,
+  });
+
 export default openai;

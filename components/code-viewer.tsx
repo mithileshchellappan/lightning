@@ -143,7 +143,7 @@ function BaseSandpack({
         ref={previewRef}
         className={className}
         showOpenInCodeSandbox={false}
-        showRefreshButton={true}
+        showRefreshButton={false}
       />
     </>
   )

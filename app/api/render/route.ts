@@ -3,60 +3,56 @@ import shadcnComponents from '@/utils/shadcn-ai-extract';
 import dedent from 'dedent';
 import { Models } from '@/lib/utils';
 import { CoreMessage, generateText } from 'ai';
-import openai from '@/utils/openai';
+// import openai from '@/utils/openai';
+import { openaiClient } from '@/utils/openai';
+import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
 
 export async function POST(request: Request) {
   try {
-    let {messages, model, isVision = false} : {messages: CoreMessage[], model: String, isVision: boolean} = await request.json();
-
+    let {messages, model, isVision = false} : {messages: ChatCompletionMessageParam[], model: String, isVision: boolean} = await request.json();
+    console.log(model)
     if(isVision && !Models.find(m => m.value === model)?.isVisionEnabled) {
       return NextResponse.json({ error: 'Vision is not enabled for this model', status: 400 });
     }
 
-    var {text} = await generateText({
-      model: openai(model as string),
-      system: dedent(GENERATE_PROMPT),
-      messages: messages
+
+    
+    const systemMessage: ChatCompletionMessageParam = {role: 'assistant', content: [{type: 'text', text: dedent(GENERATE_PROMPT)}]}
+    messages = [systemMessage, ...messages]
+
+
+    const completion = await openaiClient.chat.completions.create({
+      model: model as string,
+      messages: messages,
     });
-    // var text = EXAMPLE_CODE
+    console.log(completion)
+    
+    var text = completion.choices[0].message.content
+    
+    // Remove code block markers
+    text = text.replace(/^```[\w-]*\n|```$/gm, '')
+    
     text = dedent(text)
     console.log(text)
     console.log("GENERATED AI Response")
-    if (!text.startsWith("<lightningArtifact") && !text.endsWith("</lightningArtifact>")) {
+    if (!text.startsWith("<lightningArtifact")) {
       return NextResponse.json({ error: 'Error rendering the component', status: 500 });
     }
-
     const nameMatch = text.match(/name="([^"]*)"/)
     const iconMatch = text.match(/icon="([^"]*)"/)
     const name = nameMatch ? nameMatch[1] : ''
     const icon = iconMatch ? iconMatch[1] : ''
 
     // Extract code from inside lightningArtifact tag or up to export default
-    const codeMatch = text.match(/<lightningArtifact[^>]*>([\s\S]*?)(?:<\/lightningArtifact>|export default[\s\S]*$)/)
+    const codeMatch = text.match(/<lightningArtifact[^>]*>([\s\S]*?)(?:<\/lightningArtifact>*$)/)
     let code = codeMatch ? codeMatch[1].trim() : ''
-
-    const hasExport = /export\s+(?:default\s+)?(?:function|const|class|let|var)/.test(code)
-    
-    if (!hasExport) {
-      const componentMatch = code.match(/(?:function|const|class|let|var)\s+([A-Z][A-Za-z0-9]*)|const\s+([A-Z][A-Za-z0-9]*)\s*=\s*\(\s*\)\s*=>/);
-      
-      let componentName;
-      if (componentMatch) {
-        componentName = componentMatch[1] || componentMatch[2];
-      } else {
-        const isArrowComponent = /const\s*=\s*\(\s*\)\s*=>/.test(code);
-        componentName = isArrowComponent ? 'Component' : 'Component';
-      }
-      
-      code = `${code}\n\nexport default ${componentName};`
-    }
 
     const result = {
       code,
       name,
       icon
     }
-    
+    console.log(result)
     return NextResponse.json(result)
   } catch (error) {
     console.error('Error rendering code:', error);
@@ -71,10 +67,10 @@ const EXAMPLE_CODE = `<lightningArtifact name="todo" icon="Puzzle">  import { us
 var GENERATE_PROMPT = `
     You are Lightning, a senior frontend React engineer who is also a principal UI/UX designer. Your designs are modern, with proper color schema. Your designs are world class. Follow the instructions carefully
     
-    - Start with tag <lightningArtifact name="..." icon="...">...</lightningArtifact>
+    - Start with tag <lightningArtifact name="..." icon="...">...</lightningArtifact>. DO NOT USE ANY OTHER TAGS.
     - The name should be the name of the app generated.
     - The icon should be a valid icon name from the Lucide React icon library. The icon text would be used to import the icon directly from the Lucide React library, e.g. \`import { IconName } from "lucide-react"\`.
-    - DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`. DO NOT USE MARKDOWN CODE BLOCKS
+    - IMPORTANT: DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`. DO NOT USE MARKDOWN CODE BLOCKS
     - Create a React component for whatever the user asked you to create and make sure it can run by itself by using a default export
     - DO NOT START WITH BACKTICKS 
     - Make sure the React app is interactive and functional by creating state when needed and having no required props
@@ -95,6 +91,10 @@ var GENERATE_PROMPT = `
     - You are given an array of messages. When user requires a change, make sure to update code accordingly based on previous changes as well. Do not ignore previous changes.
     - ALWAYS USE LOCAL STORAGE TO PERSIST STATE. FOR EXAMPLE A TODO APP SHOULD PERSIST THE TODO LIST ACROSS RELOADS.
     - If user encounters an error and asks you to fix it. Please make sure to fix the entire code. Do not reply in normal text.
+    - If you use any imports from React like useState or useEffect, make sure to import them directly
+    - Repeat elements as needed to match the description. For example, if there are 15 items, the code should have 15 items. DO NOT LEAVE comments like "<!-- Repeat for each news item -->" or bad things will happen.
+    - Do not add comments in the code such as "<!-- Add other navigation links as needed -->" and "<!-- ... other news items ... -->" in place of writing the full code. WRITE THE FULL CODE.
+    - If you need an icon, please create an SVG for it and use it in the code. DO NOT IMPORT AN ICON FROM A LIBRARY.
     - There are some prestyled components available for use. Please use your best judgement to use any of these components if the app calls for one.
 
     Here are the components that are available, along with how to import them, and how to use them:

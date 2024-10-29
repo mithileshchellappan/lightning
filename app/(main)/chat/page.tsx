@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { CoreMessage, CoreUserMessage, UserContent } from 'ai'
+import { ChatCompletionContentPart, ChatCompletionMessageParam } from 'openai/resources/index.mjs'
 
 const errorCode = `export default function App() {
   return (
@@ -43,7 +43,7 @@ export default function RenderPage() {
   const [code, setCode] = useState<{ code: string, name?: string, icon?: string }>({ code: '', name: undefined, icon: undefined })
   const [isLoading, setIsLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
-  const [messages, setMessages] = useState<CoreMessage[]>([])
+  const [messages, setMessages] = useState<ChatCompletionMessageParam[]>([])
   const [viewCode, setViewCode] = useState(false)
   const [versions, setVersions] = useState<Version[]>([])
   const { user } = useUser();
@@ -59,14 +59,14 @@ export default function RenderPage() {
   async function handleCodeRequest(query: string, imageId?: string, isUpdate = false) {
     setIsLoading(true);
     try {
-      const userContent: UserContent = [{ type: 'text', text: query }]
+      const userContent: ChatCompletionContentPart[] = [{ type: 'text', text: query + `\n Reply only the react component starting with <lightningArtifact and ending with </lightningArtifact>. IMPORTANT: DO NOT REPLY IN PLAIN TEXT. DO NOT ADD ANY COMMENTS. ONLY REPLY THE FULL EXPORTED REACT CODE. REACT CODE MUST BE A FULL COMPONENT, LIKE export default function GeneratedApp() { ... }` }]
       if(imageId) {
         const imageUrl = await getImage(imageId)
-        userContent.push({ type: 'image', image: imageUrl })
+        userContent.push({ type: 'image_url', image_url: {url: imageUrl, detail: 'auto'}  })
       }
-      const userMessage: CoreUserMessage = { role: 'user', content: userContent }
+      const userMessage: ChatCompletionMessageParam = { role: 'user', content: userContent }
      
-      const requestMessages: CoreMessage[] = isUpdate
+      const requestMessages: ChatCompletionMessageParam[] = isUpdate
         ? [...messages, userMessage]
         : [userMessage];
 
