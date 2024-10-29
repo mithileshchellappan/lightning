@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import * as shadcnComponents from "@/utils/shadcn-ui-extract";
 import { SandpackLogLevel } from "@codesandbox/sandpack-client";
 import { atomDark } from '@codesandbox/sandpack-themes'
+import Editor from "@monaco-editor/react";
 
 import {
   SandpackCodeEditor,
@@ -14,6 +15,9 @@ import {
   SandpackPreviewRef,
   SandpackProvider,
   useSandpack,
+  SandpackStack,
+  useActiveCode,
+  FileTabs,
 } from "@codesandbox/sandpack-react/unstyled";
 import dedent from "dedent";
 import "./code-viewer.css";
@@ -90,12 +94,7 @@ export default function CodeViewer({
     >
       <SandpackLayout className={previewMode ? 'h-90 w-80' : 'h-full w-full' }>
         {viewCode &&
-          <SandpackCodeEditor
-            showTabs={false}
-            showLineNumbers
-            closableTabs={true}
-            wrapContent={false}
-          />}
+          <MonacoEditor />}
         <BaseSandpack screenShotCallback={screenShotCallback} viewCode={viewCode} errorCallback={errorCallback} className={viewCode ? 'hidden' : 'flex h-full w-full grow flex-col'} />
       </SandpackLayout>
 
@@ -147,6 +146,26 @@ function BaseSandpack({
       />
     </>
   )
+}
+
+function MonacoEditor() {
+  const { code, updateCode } = useActiveCode();
+  const { sandpack } = useSandpack();
+ 
+  return (
+    <SandpackStack style={{ height: "100vh", margin: 0 }}>
+      {/* <FileTabs /> */}
+        <Editor
+          width="100%"
+          height="100%"
+          language="typescript"
+          theme="vs-dark"
+          key={sandpack.activeFile}
+          defaultValue={code}
+          onChange={(value) => updateCode(value || "")}
+        />
+    </SandpackStack>
+  );
 }
 
 
