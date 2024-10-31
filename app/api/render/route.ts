@@ -24,8 +24,9 @@ export async function POST(request: Request) {
     const completion = await openaiClient.chat.completions.create({
       model: model as string,
       messages: messages,
+      temperature: 0.1,
+      top_p: 0.3
     });
-    console.log(completion)
     
     var text = completion.choices[0].message.content
     
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
     console.log(text)
     console.log("GENERATED AI Response")
     if (!text.startsWith("<lightningArtifact")) {
-      return NextResponse.json({ error: 'Error rendering the component', status: 500 });
+      return NextResponse.json({ error: 'Error rendering the component' }, {status: 500});
     }
     const nameMatch = text.match(/name="([^"]*)"/)
     const iconMatch = text.match(/icon="([^"]*)"/)
@@ -44,10 +45,12 @@ export async function POST(request: Request) {
     const icon = iconMatch ? iconMatch[1] : ''
 
     // Extract code from inside lightningArtifact tag or up to export default
-    const codeMatch = text.match(/<lightningArtifact[^>]*>([\s\S]*?)(?:<\/lightningArtifact>*$)/)
+    const codeMatch = text.match(/<lightningArtifact[^>]*>([\s\S]*?)(?:<\/lightningArtifact>[\s\S]*$)/)
     let code = codeMatch ? codeMatch[1].trim() : ''
-    code = code.replaceAll('<script>', '')
-    code = code.replaceAll('</script>', '')
+    
+    // Remove script tags but keep their content
+    code = code.replaceAll(/<script[^>]*>([\s\S]*?)<\/script>/g, '')
+    code = code.replaceAll(/<script>|<\/script>/g, '')
     code = code.replaceAll('\\n', '\n')
 
     const result = {

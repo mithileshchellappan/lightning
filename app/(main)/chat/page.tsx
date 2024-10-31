@@ -25,6 +25,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ChatCompletionContentPart, ChatCompletionMessageParam } from 'openai/resources/index.mjs'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { ChevronDown } from 'lucide-react'
+import { Models } from '@/lib/utils'
 
 const errorCode = `export default function App() {
   return (
@@ -49,6 +60,7 @@ export default function RenderPage() {
   const { user } = useUser();
   const router = useRouter();
   const [showPublishAlert, setShowPublishAlert] = useState(false)
+  const [selectedModel, setSelectedModel] = useState(Models.find(iteratingModel => iteratingModel.value === model) || Models[0])
 
   async function getImage(imageId: string) {
     const fetchedImage = await fetch(`/api/image?id=${imageId}`).then(res => res.json())
@@ -59,7 +71,7 @@ export default function RenderPage() {
   async function handleCodeRequest(query: string, imageId?: string, isUpdate = false) {
     setIsLoading(true);
     try {
-      const userContent: ChatCompletionContentPart[] = [{ type: 'text', text: query + `\n Reply only the react component starting with <lightningArtifact and ending with </lightningArtifact>. IMPORTANT: DO NOT REPLY IN PLAIN TEXT. DO NOT ADD ANY COMMENTS. \n IMPORTANT: ONLY REPLY THE FULL EXPORTED REACT CODE. REACT CODE MUST BE A FULL COMPONENT, LIKE export default function GeneratedApp() { ... }` }]
+      const userContent: ChatCompletionContentPart[] = [{ type: 'text', text: query + `\n Reply only the react component starting with <lightningArtifact and ending with </lightningArtifact>.DO NOT REPLY IN JSON FORMAT!. DO NOT START WITH ANY OTHER TAGS LIKE <script> IMPORTANT: DO NOT REPLY IN PLAIN TEXT. DO NOT ADD ANY COMMENTS. \n IMPORTANT: ONLY REPLY THE FULL EXPORTED REACT CODE. REACT CODE MUST BE A FULL COMPONENT, LIKE export default function GeneratedApp() { ... }` }]
       if(imageId) {
         const imageUrl = await getImage(imageId)
         userContent.push({ type: 'image_url', image_url: {url: imageUrl, detail: 'auto'}  })
@@ -75,7 +87,7 @@ export default function RenderPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: requestMessages, model, isVision }),
+        body: JSON.stringify({ messages: requestMessages, model: selectedModel.value, isVision }),
       });
 
       if (!response.ok || !response.body || response.status !== 200) {
@@ -232,8 +244,45 @@ export default function RenderPage() {
       </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between ">
-          <h1 className="text-lg ml-6 sm:text-2xl font-bold truncate">{code.name ?? ''}</h1>
+        <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between items-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="h-auto px-2 py-1.5 text-base sm:text-lg flex items-center gap-2"
+              >
+                <span className="font-semibold truncate max-w-[150px] sm:max-w-[300px]">
+                  {selectedModel.name}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[200px] sm:w-[300px]" align="start">
+              <DropdownMenuLabel>Select Model</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="max-h-[300px] overflow-y-auto">
+                {Models.map((model) => (
+                  <DropdownMenuItem 
+                    key={model.value} 
+                    className="py-2"
+                    onClick={() => setSelectedModel(model)}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium">
+                        {model.name}
+                      </span>
+                      {model.isVisionEnabled && (
+                        <span className="text-xs text-muted-foreground">
+                          Supports image input
+                        </span>
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <div className='flex items-center'>
             <TooltipProvider>
               <div className="flex box-content h-6 items-center gap-2 rounded-md border border-gs-gray-alpha-400 bg-white dark:bg-zinc-800 p-1 ml-auto">
@@ -252,7 +301,7 @@ export default function RenderPage() {
                 <HistorySheet versions={versions} />
               </div>
             </TooltipProvider>
-            {/* @ts-ignore */}
+            {/* @ts-ignor */}
             <ShinyButton className='ml-5' onClick={handlePublish}>Publish</ShinyButton>
           </div>
         </header>

@@ -7,11 +7,6 @@ export function cn(...inputs: ClassValue[]) {
 
 export const Models = [
   {
-    name: "Llama 3.2 90B Vision Instruct",
-    value: "Llama-3.2-90B-Vision-Instruct",
-    isVisionEnabled: true
-  },
-  {
     name: "Meta Llama 3.1 405B Instruct",
     value: "Meta-Llama-3.1-405B-Instruct",
     isVisionEnabled: false
@@ -25,5 +20,10 @@ export const Models = [
     name: "Meta Llama 3.2 3B Instruct",
     value: "Meta-Llama-3.2-3B-Instruct",
     isVisionEnabled: false
+  },
+  {
+    name: "Llama 3.2 90B Vision Instruct",
+    value: "Llama-3.2-90B-Vision-Instruct",
+    isVisionEnabled: true
   },
 ]
