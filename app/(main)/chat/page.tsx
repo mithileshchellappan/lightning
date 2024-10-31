@@ -301,7 +301,7 @@ export default function RenderPage() {
                 <HistorySheet versions={versions} />
               </div>
             </TooltipProvider>
-            {/* @ts-ignor */}
+            {/* @ts-ignore */}
             <ShinyButton className='ml-5' onClick={handlePublish}>Publish</ShinyButton>
           </div>
         </header>
