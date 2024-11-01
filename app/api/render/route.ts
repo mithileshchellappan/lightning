@@ -7,6 +7,25 @@ import { CoreMessage, generateText } from 'ai';
 import { openaiClient } from '@/utils/openai';
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
 
+async function completeUnfinishedCode(unfinishedCode: string, model: string) {
+  const completionMessage: ChatCompletionMessageParam = {
+    role: 'user',
+    content: `Complete this React component code. Add any missing functionality and make sure to end with </lightningArtifact>:\n\n${unfinishedCode}`
+  }
+  
+  const completion = await openaiClient.chat.completions.create({
+    model: model as string,
+    messages: [
+      { role: 'system', content: 'You are a React expert. Complete the unfinished component code and make sure it ends with </lightningArtifact>. DO NOT REPLY WITH ANYTHING OTHER THAN THE COMPLETED CODE. DO NOT USE BACKTICKS. DO NOT PROVIDE ANY EXPLANATION. JUST THE COMPLETED CODE.' },
+      completionMessage
+    ],
+    temperature: 0.1,
+    top_p: 0.3
+  });
+
+  return completion.choices[0].message.content;
+}
+
 export async function POST(request: Request) {
   try {
     let {messages, model, isVision = false} : {messages: ChatCompletionMessageParam[], model: String, isVision: boolean} = await request.json();
@@ -29,11 +48,18 @@ export async function POST(request: Request) {
     });
     
     var text = completion.choices[0].message.content
-    
+    // var text = EXAMPLE_UNFINISHED_CODE
     // Remove code block markers
     text = text.replace(/^```[\w-]*\n|```$/gm, '')
     
     text = dedent(text)
+
+    // Check if code has opening tag but no closing tag
+    if (text.includes('<lightningArtifact') && !text.includes('</lightningArtifact>')) {
+      console.log("Detected unfinished code, attempting to complete it...")
+      text = await completeUnfinishedCode(text, model as string)
+    }
+
     console.log(text)
     console.log("GENERATED AI Response")
     if (!text.startsWith("<lightningArtifact")) {
@@ -70,6 +96,8 @@ const EXAMPLE_CODE = `<lightningArtifact name="todo" icon="Puzzle">  import { us
 </lightningArtifact>
 `
 
+const EXAMPLE_UNFINISHED_CODE = `<lightningArtifact name="todo" icon="Puzzle">  import { useState } from 'react';\nimport { Input } from \"/components/ui/input\";\nimport { Button } from \"/components/ui/button\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"/components/ui/card\";\n\nconst TodoApp = () => {`
+
 var GENERATE_PROMPT = `
     You are Lightning, a senior frontend React engineer who is also a principal UI/UX designer. Your designs are modern, with proper color schema. Your designs are world class. Follow the instructions carefully
     
@@ -103,6 +131,39 @@ var GENERATE_PROMPT = `
     - NEVER ADD PLACEHOLDERS TO YOUR APP. ALL FUNCTIONS SHOULD BE IMPLEMENTED.
     - You are given an array of messages. When user requires a change, make sure to update code accordingly based on previous changes as well.
     - ALWAYS USE LOCAL STORAGE TO PERSIST STATE. FOR EXAMPLE A TODO APP SHOULD PERSIST THE TODO LIST ACROSS RELOADS.
+     Here are the components that are available, along with how to import them, and how to use them:
+    NOTE: Whem importing these components do not import them all in one import statement. Import them line by line
+    Example: 
+    \`\`\`typescript
+    import { Button } from "/components/ui/button"
+    import { Input } from "/components/ui/input"
+    \`\`\`
+
+    ${shadcnComponents
+      .map(
+        (component) => `
+          <component>
+          <name>
+          ${component.name}
+          </name>
+          <import-instructions>
+          ${component.importDocs}
+          </import-instructions>
+          <usage-instructions>
+          ${component.usageDocs}
+          </usage-instructions>
+          </component>
+        `,
+      )
+      .join("\n")}    
+    - YOUR APP SHOULD ALWAYS HAVE h-full AND w-full ON THE ROOT DIV
+    - YOUR APP SHOULD NOT HAVE ANY SCROLLBARS
+    - YOUR APP SHOULD BE ADAPTIVE TO THEME CHANGES. DO NOT ADD A DARK MODE TOGGLE AS THIS WILL BE HANDLED EXTERNALLY
+    - NEVER APP PLACE HOLDERS TO YOUR APP. ALL FUNCTIONS SHOULD BE IMPLEMENTED.
+    - ALWAYS START WITH <lightningArtifact ...> and end with </lightningArtifact>
+    - NEVER REPLY IN NORMAL TEXT. ONLY REACT CODE INSIDE <lightningArtifact ...>...</lightningArtifact> tags
+    - FOR EVERY WRONG RESPONSE, YOU WILL BE PENALIZED.
+    - NEVER FORGET TO EXPORT THE COMPONENT
     `
 
   

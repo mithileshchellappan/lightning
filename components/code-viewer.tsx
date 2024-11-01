@@ -163,6 +163,11 @@ function MonacoEditor() {
           key={sandpack.activeFile}
           defaultValue={code}
           onChange={(value) => updateCode(value || "")}
+          options={{
+            minimap: { enabled: false },
+            autoIndent: "full",
+            
+          }}
         />
     </SandpackStack>
   );
