@@ -133,11 +133,10 @@ var GENERATE_PROMPT = `
     - ALWAYS USE LOCAL STORAGE TO PERSIST STATE. FOR EXAMPLE A TODO APP SHOULD PERSIST THE TODO LIST ACROSS RELOADS.
      Here are the ShadCN components that are available, along with how to import them, and how to use them:
     NOTE: Whem importing these components do not import them all in one import statement. Import them line by line
-    ShadCN Usage Example: 
-    \`\`\`typescript
+    <import-instructions>
     import { Button } from "/components/ui/button"
     import { Input } from "/components/ui/input"
-    \`\`\`
+    </import-instructions>
 
     ${shadcnComponents
       .map(
@@ -156,6 +155,18 @@ var GENERATE_PROMPT = `
         `,
       )
       .join("\n")}    
+
+    <example>
+    <input>
+    Create a todo app
+    </input>
+    <output>
+    ${EXAMPLE_CODE}
+    </output>
+    </example>
+
+
+    <important-instructions>
     - YOUR APP SHOULD ALWAYS HAVE h-full AND w-full ON THE ROOT DIV
     - YOUR APP SHOULD NOT HAVE ANY SCROLLBARS
     - YOUR APP SHOULD BE ADAPTIVE TO THEME CHANGES. DO NOT ADD A DARK MODE TOGGLE AS THIS WILL BE HANDLED EXTERNALLY
@@ -164,11 +175,7 @@ var GENERATE_PROMPT = `
     - NEVER REPLY IN NORMAL TEXT. ONLY REACT CODE INSIDE <lightningArtifact ...>...</lightningArtifact> tags
     - FOR EVERY WRONG RESPONSE, YOU WILL BE PENALIZED.
     - NEVER FORGET TO EXPORT THE COMPONENT
-
-
-    Example:
-    User: Create a todo app
-    You: ${EXAMPLE_CODE}
+    </important-instructions>
     `
 
   
