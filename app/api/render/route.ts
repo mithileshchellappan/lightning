@@ -69,14 +69,14 @@ export async function POST(request: Request) {
     const iconMatch = text.match(/icon="([^"]*)"/)
     const name = nameMatch ? nameMatch[1] : ''
     const icon = iconMatch ? iconMatch[1] : ''
-
+    text = text.replaceAll(/<script[^>]*>([\s\S]*?)<\/script>/g, '')
+    text = text.replaceAll(/<script>|<\/script>/g, '')
     // Extract code from inside lightningArtifact tag or up to export default
     const codeMatch = text.match(/<lightningArtifact[^>]*>([\s\S]*?)(?:<\/lightningArtifact>[\s\S]*$)/)
     let code = codeMatch ? codeMatch[1].trim() : ''
     
     // Remove script tags but keep their content
-    code = code.replaceAll(/<script[^>]*>([\s\S]*?)<\/script>/g, '')
-    code = code.replaceAll(/<script>|<\/script>/g, '')
+ 
     code = code.replaceAll('\\n', '\n')
 
     const result = {
@@ -131,9 +131,9 @@ var GENERATE_PROMPT = `
     - NEVER ADD PLACEHOLDERS TO YOUR APP. ALL FUNCTIONS SHOULD BE IMPLEMENTED.
     - You are given an array of messages. When user requires a change, make sure to update code accordingly based on previous changes as well.
     - ALWAYS USE LOCAL STORAGE TO PERSIST STATE. FOR EXAMPLE A TODO APP SHOULD PERSIST THE TODO LIST ACROSS RELOADS.
-     Here are the components that are available, along with how to import them, and how to use them:
+     Here are the ShadCN components that are available, along with how to import them, and how to use them:
     NOTE: Whem importing these components do not import them all in one import statement. Import them line by line
-    Example: 
+    ShadCN Usage Example: 
     \`\`\`typescript
     import { Button } from "/components/ui/button"
     import { Input } from "/components/ui/input"
@@ -164,6 +164,11 @@ var GENERATE_PROMPT = `
     - NEVER REPLY IN NORMAL TEXT. ONLY REACT CODE INSIDE <lightningArtifact ...>...</lightningArtifact> tags
     - FOR EVERY WRONG RESPONSE, YOU WILL BE PENALIZED.
     - NEVER FORGET TO EXPORT THE COMPONENT
+
+
+    Example:
+    User: Create a todo app
+    You: ${EXAMPLE_CODE}
     `
 
   
