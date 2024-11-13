@@ -63,9 +63,9 @@ export default function AIAssistant() {
     }
     if (question.trim()) {
       if(imageId) {
-        router.push(`/chat?question=${encodeURIComponent(question)}&imageId=${encodeURIComponent(imageId)}&model=${encodeURIComponent(model.value)}&isVision=${encodeURIComponent(model.isVisionEnabled)}`)
+        router.push(`/chat?question=${encodeURIComponent(question)}&imageId=${encodeURIComponent(imageId)}&model=${encodeURIComponent(model.id)}&isVision=${encodeURIComponent(model.isVisionEnabled)}`)
       } else {
-        router.push(`/chat?question=${encodeURIComponent(question)}&model=${encodeURIComponent(model.value)}`)
+        router.push(`/chat?question=${encodeURIComponent(question)}&model=${encodeURIComponent(model.id)}`)
       }
     }
   }

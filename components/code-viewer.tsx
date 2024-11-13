@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react"
 import * as shadcnComponents from "@/utils/shadcn-ui-extract";
 import { SandpackLogLevel } from "@codesandbox/sandpack-client";
 import { atomDark } from '@codesandbox/sandpack-themes'
-import Editor from "@monaco-editor/react";
+import Editor, {useMonaco} from "@monaco-editor/react";
+import { useTheme } from 'next-themes'
 
 import {
   SandpackCodeEditor,
@@ -151,7 +152,18 @@ function BaseSandpack({
 function MonacoEditor() {
   const { code, updateCode } = useActiveCode();
   const { sandpack } = useSandpack();
- 
+  const { theme } = useTheme()
+  const monaco = useMonaco()
+
+
+  useEffect(() => {
+    if(monaco){
+      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: true,
+        noSyntaxValidation: true,
+      });
+    }
+  }, [monaco])
   return (
     <SandpackStack style={{ height: "100vh", margin: 0 }}>
       {/* <FileTabs /> */}
@@ -159,7 +171,7 @@ function MonacoEditor() {
           width="100%"
           height="100%"
           language="typescript"
-          theme="vs-dark"
+          theme={theme === "dark" ? "vs-dark" : "vs-light"}
           key={sandpack.activeFile}
           defaultValue={code}
           onChange={(value) => updateCode(value || "")}
