@@ -373,11 +373,11 @@ export default function RenderPage() {
       <Dialog open={isPublishModalOpen} onOpenChange={setIsPublishModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Publish Component</DialogTitle>
+            <DialogTitle>Publish Lightning App</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <label htmlFor="componentName" className="text-sm font-medium mb-2 block">
-              Your Micro-App Name
+              Your Lightning-App Name
             </label>
             <Input
               id="componentName"
