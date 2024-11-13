@@ -2,13 +2,14 @@ import openai from '@/utils/openai';
 import { NextResponse } from 'next/server';
 import { streamText } from 'ai';
 import dedent from 'dedent';
+import { Models } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
     const {code} = await request.json();
     
     var stream = await streamText({
-      model: openai(process.env.AI_MODEL_2 as string),
+      model: openai(Models[0].value as string),
       system: dedent(GENERATE_PROMPT),
       prompt: dedent(code),
     });
