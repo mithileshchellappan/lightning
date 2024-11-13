@@ -4,6 +4,7 @@ import "./globals.css";
 import { PWA } from "./pwa";
 import { ThemeProvider } from '../context/ThemeProvider'
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -41,6 +42,7 @@ export default function RootLayout({
         >
             <PWA />
               {children}
+              <Toaster />
         </ThemeProvider>
       </body>
       </html>

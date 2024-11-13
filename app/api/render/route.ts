@@ -175,6 +175,7 @@ var GENERATE_PROMPT = `
     - NEVER REPLY IN NORMAL TEXT. ONLY REACT CODE INSIDE <lightningArtifact ...>...</lightningArtifact> tags
     - FOR EVERY WRONG RESPONSE, YOU WILL BE PENALIZED.
     - NEVER FORGET TO EXPORT THE COMPONENT
+    - IF YOU ARE USING React.Fragment make sure to import it directly
     </important-instructions>
     `
 

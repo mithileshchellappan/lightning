@@ -25,7 +25,7 @@ const animationProps = {
     },
   },
 } as AnimationProps;
-interface ShinyButtonProps {
+export interface ShinyButtonProps {
   children: React.ReactNode;
   className?: string;
 }

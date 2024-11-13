@@ -36,6 +36,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ChevronDown } from 'lucide-react'
 import { Models } from '@/lib/utils'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
+import { ShinyButtonProps } from "@/components/ui/shiny-button"
+
+interface ExtendedShinyButtonProps extends ShinyButtonProps {
+  onClick?: () => void;
+  variant?: string;
+  disabled?: boolean;
+}
 
 const errorCode = `export default function App() {
   return (
@@ -61,6 +71,9 @@ export default function RenderPage() {
   const router = useRouter();
   const [showPublishAlert, setShowPublishAlert] = useState(false)
   const [selectedModel, setSelectedModel] = useState(Models.find(iteratingModel => iteratingModel.value === model) || Models[0])
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false)
+  const [publishName, setPublishName] = useState("")
+  const { toast } = useToast()
 
   async function getImage(imageId: string) {
     const fetchedImage = await fetch(`/api/image?id=${imageId}`).then(res => res.json())
@@ -196,17 +209,16 @@ export default function RenderPage() {
     setVersions([...versions])
   }
 
-  const handlePublish = async () => {
-    if (!user) {
-      console.error('User not authenticated');
-      return;
+  function handlePublishClick() {
+    if (typeof code.code === 'string') {
+      const nameMatch = code.code.match(/name="([^"]*)"/)
+      const initialName = nameMatch ? nameMatch[1] : ''
+      setPublishName(initialName)
+      setIsPublishModalOpen(true)
     }
+  }
 
-    if (!code.code || !code.name || !code.icon) {
-      console.error('Missing required data for publishing');
-      return;
-    }
-
+  async function handlePublish() {
     try {
       const response = await fetch('/api/publish', {
         method: 'POST',
@@ -214,29 +226,34 @@ export default function RenderPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: code.name,
           code: code.code,
+          name: publishName,
           icon: code.icon,
-          userId: user.id,
+          userId: user?.id,
           imageUrl: versions[versions.length - 1].imageUrl
-        }),
-      });
+        })
+      })
 
-      if (!response.ok) {
-        throw new Error('Failed to publish app');
+      const data = await response.json()
+      if (response.ok) {
+        await navigator.clipboard.writeText(`${window.location.origin}/app/${data.id}`)
+        toast({
+          title: "Success!",
+          description: "Your Micro-App URL has been copied to your clipboard",
+        })
+        setIsPublishModalOpen(false)
+      } else {
+        throw new Error(data.error)
       }
-
-      const result = await response.json();
-      console.log('App published successfully:', result);
-
-      const appUrl = `${window.location.origin}/app/${result.id}`;
-      await navigator.clipboard.writeText(appUrl);
-
-      setShowPublishAlert(true);
     } catch (error) {
-      console.error('Error publishing app:', error);
+      toast({
+        title: "Error",
+        description: "Failed to publish component",
+        variant: "destructive"
+      })
     }
-  };
+  }
+
   return (
     <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
       <div className="hidden md:block">
@@ -301,8 +318,13 @@ export default function RenderPage() {
                 <HistorySheet versions={versions} />
               </div>
             </TooltipProvider>
-            {/* @ts-ignore */}
-            <ShinyButton className='ml-5' onClick={handlePublish}>Publish</ShinyButton>
+            <ShinyButton 
+              className='ml-5' 
+              onClick={handlePublishClick} 
+              {...({} as ExtendedShinyButtonProps)}
+            >
+              Publish
+            </ShinyButton>
           </div>
         </header>
 
@@ -348,20 +370,42 @@ export default function RenderPage() {
         </main>
       </div>
 
-      <AlertDialog open={showPublishAlert} onOpenChange={setShowPublishAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>App Published Successfully</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your app has been published and is now available in your saved apps. 
-              The app URL has been copied to your clipboard.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowPublishAlert(false)}>OK</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Dialog open={isPublishModalOpen} onOpenChange={setIsPublishModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Publish Component</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <label htmlFor="componentName" className="text-sm font-medium mb-2 block">
+              Your Micro-App Name
+            </label>
+            <Input
+              id="componentName"
+              value={publishName}
+              defaultValue={code.name}
+              onChange={(e) => setPublishName(e.target.value)}
+              placeholder="App Name"
+              className="w-full"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => setIsPublishModalOpen(false)}
+              className="mr-2"
+              variant='destructive'
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePublish}
+              variant='outline'
+              disabled={!publishName.trim()}
+            >
+              Publish 🚀
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
