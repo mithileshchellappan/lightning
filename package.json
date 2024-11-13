@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "install": "npx prisma generate && next build && next start",
+    "install": "npx prisma migrate dev && npx prisma migrate deploy && npx prisma generate && next build && next start",
     "postinstall": "prisma generate"
   },
   "dependencies": {

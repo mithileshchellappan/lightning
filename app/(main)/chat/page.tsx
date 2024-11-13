@@ -239,7 +239,7 @@ export default function RenderPage() {
         await navigator.clipboard.writeText(`${window.location.origin}/app/${data.id}`)
         toast({
           title: "Success!",
-          description: "Your Micro-App URL has been copied to your clipboard",
+          description: "Your Lightning App URL has been copied to your clipboard",
         })
         setIsPublishModalOpen(false)
       } else {
@@ -248,7 +248,7 @@ export default function RenderPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to publish component",
+        description: "Failed to publish app. Please try again.",
         variant: "destructive"
       })
     }
@@ -373,12 +373,9 @@ export default function RenderPage() {
       <Dialog open={isPublishModalOpen} onOpenChange={setIsPublishModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Publish Lightning App</DialogTitle>
+            <DialogTitle>Publish your Lightning App</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <label htmlFor="componentName" className="text-sm font-medium mb-2 block">
-              Your Lightning-App Name
-            </label>
             <Input
               id="componentName"
               value={publishName}
