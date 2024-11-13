@@ -18,7 +18,7 @@ export default async function Page({ params }: { params: { id: string } }) {
  }
   
   const getGeneratedApp = cache(async (id: string) => {
-    return client?.publishedApp.findUnique({
+    return await client.publishedApp.findUnique({
       where: {
         id,
       },
