@@ -56,7 +56,6 @@ export default function AIAssistant() {
   };
 
   const handleGenerate = ({imageId, model=Models[0]}: {imageId?: string, model: typeof Models[0]}) => {
-    console.log(imageId, model)
     if(!isSignedIn) {
       clerk.openSignIn();
       return;

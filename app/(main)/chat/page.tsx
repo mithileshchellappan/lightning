@@ -107,7 +107,6 @@ export default function RenderPage() {
       }
 
       const result = await response.json();
-      console.log("result", result);
 
       setCode(result);
       setMessage('');
@@ -195,7 +194,6 @@ while (true) {
       setMessage(question)
       question = ''
     }
-    console.log('running effect')
   }, [question])
 
   const handleSend = () => {
@@ -218,7 +216,6 @@ while (true) {
   }
 
   const screenShotCallback = (imageUrl: string) => {
-    console.log("imageUrl", imageUrl)
     let lastVersion = versions[versions.length - 1]
     versions[versions.length - 1] = { ...lastVersion, imageUrl }
     setVersions([...versions])
