@@ -40,6 +40,11 @@ export default function AIAssistant() {
       fetchPublishedApps();
     }
   }, [isSignedIn, user]);
+  
+  useEffect(() => {
+    const themeColor = resolvedTheme === "dark" ? "#000000" : "#ffffff"
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor)
+  }, [resolvedTheme])
 
   const fetchPublishedApps = async () => {
     try {
