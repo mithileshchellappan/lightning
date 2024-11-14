@@ -177,7 +177,7 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
                   </SelectTrigger>
                   <SelectContent>
                     {Models.map((model) => (
-                      <SelectItem key={model.value} value={model.value}>
+                      <SelectItem key={model.id} value={model.value}>
                         {model.name} {model.isVisionEnabled ? "👁️" : ""}
                       </SelectItem>
                     ))}
