@@ -13,7 +13,6 @@ export async function POST(request: Request) {
       system: dedent(GENERATE_PROMPT),
       prompt: dedent(code),
     });
-
     return stream.toTextStreamResponse()
   } catch (error) {
     console.error('Error rendering code:', error);
@@ -23,7 +22,7 @@ export async function POST(request: Request) {
 
 const GENERATE_PROMPT = `
     You are a UI suggestions engine. You will be given a code snippet and you will need to return a list of suggestions for improvements.
-    You will return a maximum of 7 suggestions.
+    You will return a maximum of 5 suggestions.
     You will reply with a special tag <suggestion>...</suggestion> that contains the suggestions.
     Example:
        <suggestion>Add a responsive design</suggestion><suggestion>Add a dark mode</suggestion><suggestion>Add a navigation menu</suggestion><suggestion>Add a new feature</suggestion><suggestion>Fix the bugs</suggestion><suggestion>Improve the performance</suggestion><suggestion>Add a new page</suggestion>

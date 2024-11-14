@@ -69,7 +69,7 @@ export default function RenderPage() {
   const [versions, setVersions] = useState<Version[]>([])
   const { user } = useUser();
   const router = useRouter();
-  const [selectedModel, setSelectedModel] = useState(Models.find(iteratingModel => iteratingModel.value === model) || Models[0])
+  const [selectedModel, setSelectedModel] = useState(Models.find(iteratingModel => iteratingModel.id.toString() === model) || Models[0])
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false)
   const [publishName, setPublishName] = useState("")
   const { toast } = useToast()
