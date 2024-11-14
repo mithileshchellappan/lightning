@@ -69,7 +69,6 @@ export default function RenderPage() {
   const [versions, setVersions] = useState<Version[]>([])
   const { user } = useUser();
   const router = useRouter();
-  const [showPublishAlert, setShowPublishAlert] = useState(false)
   const [selectedModel, setSelectedModel] = useState(Models.find(iteratingModel => iteratingModel.value === model) || Models[0])
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false)
   const [publishName, setPublishName] = useState("")
@@ -152,19 +151,35 @@ export default function RenderPage() {
       if (!response.body) return
       const reader = response.body?.pipeThrough(new TextDecoderStream()).getReader()
       let previousLine = ''
-      while (true) {
-        const { done, value } = await reader?.read()
-        if (done) break
-        previousLine += value
-        if (previousLine.includes('<suggestion>') && previousLine.includes('</suggestion>')) {
-          const suggestion = previousLine.substring(
-            previousLine.indexOf('<suggestion>') + '<suggestion>'.length,
-            previousLine.indexOf('</suggestion>')
-          )
-          setSuggestions(prevSuggestions => [...prevSuggestions, suggestion])
-          previousLine = previousLine.substring(previousLine.indexOf('</suggestion>') + '</suggestion>'.length)
-        }
-      }
+     
+while (true) {
+  const { done, value } = await reader?.read();
+  if (done) break;
+
+  // Append the incoming chunk to previousLine
+  previousLine += value;
+
+  let startTag = '<suggestion>';
+  let endTag = '</suggestion>';
+
+  let startIndex = previousLine.indexOf(startTag);
+  let endIndex = previousLine.indexOf(endTag);
+
+  while (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+    const suggestion = previousLine.substring(
+      startIndex + startTag.length,
+      endIndex
+    );
+    setSuggestions(prevSuggestions => [...prevSuggestions, suggestion]);
+    previousLine = previousLine.substring(endIndex + endTag.length);
+    startIndex = previousLine.indexOf(startTag);
+    endIndex = previousLine.indexOf(endTag);
+  }
+
+  if (previousLine.length > 2000) {
+    previousLine = previousLine.slice(-2000);
+  }
+}
     } catch (error) {
       console.error('Error fetching suggestions:', error)
     }

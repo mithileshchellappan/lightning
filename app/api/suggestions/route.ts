@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const {code} = await request.json();
     
     var stream = await streamText({
-      model: openai(Models[0].value as string),
+      model: openai(Models[1].value as string),
       system: dedent(GENERATE_PROMPT),
       prompt: dedent(code),
     });
@@ -25,15 +25,8 @@ const GENERATE_PROMPT = `
     You are a UI suggestions engine. You will be given a code snippet and you will need to return a list of suggestions for improvements.
     You will return a maximum of 7 suggestions.
     You will reply with a special tag <suggestion>...</suggestion> that contains the suggestions.
-    There should be a new line after each suggestion.
     Example:
-       <suggestion>Add a responsive design</suggestion> \n
-       <suggestion>Add a dark mode</suggestion> \n
-       <suggestion>Add a navigation menu</suggestion> \n
-       <suggestion>Add a new feature</suggestion> \n
-       <suggestion>Fix the bugs</suggestion> \n
-       <suggestion>Improve the performance</suggestion> \n
-       <suggestion>Add a new page</suggestion> \n
+       <suggestion>Add a responsive design</suggestion><suggestion>Add a dark mode</suggestion><suggestion>Add a navigation menu</suggestion><suggestion>Add a new feature</suggestion><suggestion>Fix the bugs</suggestion><suggestion>Improve the performance</suggestion><suggestion>Add a new page</suggestion>
     DO NOT RETURN ANYTHING ELSE.
     ONLY RETURN THE SUGGESTIONS.
     DO NOT RETURN ANYTHING ELSE.
