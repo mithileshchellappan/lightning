@@ -31,11 +31,19 @@ export async function POST(request: Request) {
     let {messages, model, isVision = false} : {messages: ChatCompletionMessageParam[], model: String, isVision: boolean} = await request.json();
     console.log(model)
     if(isVision && !Models.find(m => m.value === model)?.isVisionEnabled) {
-      return NextResponse.json({ error: 'Vision is not enabled for this model', status: 400 });
-    }
-
-
-    
+      console.log("Removing image from messages")
+      messages = messages.map(message => {
+        if (message.role === 'user' && Array.isArray(message.content)) {
+          return {
+            ...message,
+            content: message.content.filter(
+              content => content.type !== 'image_url'
+            )
+          };
+        }
+        return message;
+      });
+    }    
     const systemMessage: ChatCompletionMessageParam = {role: 'assistant', content: [{type: 'text', text: dedent(GENERATE_PROMPT)}]}
     messages = [systemMessage, ...messages]
 
