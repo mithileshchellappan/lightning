@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   try {
     const { imageUrl } = await request.json()
-    
+    console.log("New image add request")
     if (!imageUrl) {
       return NextResponse.json(
         { error: 'Image URL is required' },
