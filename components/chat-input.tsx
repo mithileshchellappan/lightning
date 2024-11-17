@@ -21,6 +21,7 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
     const [image, setImage] = useState<string | null>(null);
     const [title, setTitle] = useState('');
     const [selectedModel, setSelectedModel] = useState(Models[0])
+    const [isLoading, setIsLoading] = useState(false);
     
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -109,19 +110,27 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
     }, [selectedModel.isVisionEnabled]);
 
     const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault(); // Prevent form submission
-      let imageId = null
-      if(image) {
-        const response = await fetch('/api/image', {
-          method: 'POST',
-          body: JSON.stringify({ imageUrl: image })
-        })
-        imageId = (await response.json()).id
+      e.preventDefault();
+      setIsLoading(true);
+      try {
+        let imageId = null;
+        if (image) {
+          const response = await fetch('/api/image', {
+            method: 'POST',
+            body: JSON.stringify({ imageUrl: image })
+          });
+          imageId = (await response.json()).id;
+        }
+        
+        handleGenerate?.({
+          imageId: imageId,
+          model: selectedModel
+        });
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      } finally {
+        setIsLoading(false);
       }
-      handleGenerate?.({
-        imageId: imageId,
-        model: selectedModel
-      });
     };
 
     return (
@@ -205,8 +214,16 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
               <RainbowButton
                 type="submit"
                 className="h-10 px-6 text-white dark:text-black text-base font-medium w-full sm:w-auto"
+                disabled={isLoading}
               >
-                Generate
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Generating...</span>
+                  </div>
+                ) : (
+                  'Generate'
+                )}
               </RainbowButton>
             </div>
           </div>
