@@ -248,7 +248,7 @@ while (true) {
 
       const data = await response.json()
       if (response.ok) {
-        await navigator.clipboard.writeText(`${window.location.origin}/app/${data.id}`)
+        await navigator.clipboard.writeText(`${window.location.origin}/app/${data.id}`).catch(err => console.log("Error copying to clipboard", err))
         toast({
           title: "Success!",
           description: "Your Lightning App URL has been copied to your clipboard",
@@ -274,6 +274,7 @@ while (true) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between items-center">
+        <div className="flex text-3xl sm:hidden"><a href="/">⚡️</a></div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
@@ -343,7 +344,7 @@ while (true) {
 
         {/* Main content */}
         <main className="flex-grow flex flex-col overflow-hidden p-0 sm:p-4">
-          <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg relative">
+          <div className="flex-grow bg-white dark:bg-zinc-900 sm:rounded-lg overflow-hidden sm:shadow-lg relative">
             {isLoading ?
               <LoadingRipple /> :
               (
@@ -352,10 +353,10 @@ while (true) {
                 </div>
               )}
           </div>
-          <div className="mt-4 flex flex-col space-y-2">
+          <div className="mt-4 flex flex-col space-y-1">
             {suggestions.length > 0 && (
               <div className="flex overflow-x-auto no-scrollbar">
-                <div className="flex space-x-2 pb-2">
+                <div className="flex space-x-1 pb-2">
                   {suggestions.slice(0, 7).map((suggestion, index) => (
                     <Button
                       key={index}
