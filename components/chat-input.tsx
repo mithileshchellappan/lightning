@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import { RainbowButton } from './ui/rainbow-button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Models } from '@/lib/utils'
+import { useUser } from '@clerk/nextjs';
 
 interface ChatInputProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   containerClassName?: string;
@@ -13,12 +14,12 @@ interface ChatInputProps extends React.TextareaHTMLAttributes<HTMLTextAreaElemen
   contentClassName?: string;
   imageUrl?: string;
   handleGenerate: (params: {imageId?: string, model: typeof Models[0]}) => void;
-  user?: any;
 }
 
 const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
-  ({ containerClassName, cardClassName, contentClassName, className, imageUrl, handleGenerate, user, ...props }, ref) => {
+  ({ containerClassName, cardClassName, contentClassName, className, imageUrl, handleGenerate, ...props }, ref) => {
 
+    const { isSignedIn } = useUser();
     const [image, setImage] = useState<string | null>(null);
     const [title, setTitle] = useState('');
     const [selectedModel, setSelectedModel] = useState(Models[0])
@@ -234,7 +235,7 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
                 className="h-10 px-6 text-white dark:text-black text-base font-medium w-full sm:w-auto"
                 disabled={isLoading}
               >
-                {!user ? (
+                {!isSignedIn ? (
                   'Login'
                 ) : isLoading ? (
                   <div className="flex items-center gap-2">
