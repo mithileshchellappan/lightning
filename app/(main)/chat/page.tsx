@@ -6,7 +6,7 @@ import CodeViewer from '@/components/code-viewer'
 import RevisionInput from '@/components/RevisionInput'
 import VersionSidebar from '@/components/VersionSidebar'
 import { Button } from "@/components/ui/button"
-import { History, ArrowUpRight, Code } from 'lucide-react'
+import { History, ArrowUpRight, Code, CloudUpload } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Ripple from '@/components/ui/ripple'
@@ -335,7 +335,8 @@ while (true) {
               onClick={handlePublishClick} 
               {...({} as ExtendedShinyButtonProps)}
             >
-              Publish
+              <CloudUpload className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">Publish</span>
             </ShinyButton>
           </div>
         </header>

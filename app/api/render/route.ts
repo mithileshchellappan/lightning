@@ -139,6 +139,13 @@ var GENERATE_PROMPT = `
     - NEVER ADD PLACEHOLDERS TO YOUR APP. ALL FUNCTIONS SHOULD BE IMPLEMENTED.
     - You are given an array of messages. When user requires a change, make sure to update code accordingly based on previous changes as well.
     - ALWAYS USE LOCAL STORAGE TO PERSIST STATE. FOR EXAMPLE A TODO APP SHOULD PERSIST THE TODO LIST ACROSS RELOADS.
+    - If in need of data, use public apis to fetch data. Do not hardcode data. Some examples are
+      - Crypto Price: https://api.coindesk.com/v1/
+      - Maps: https://api.mapbox.com
+      - Weather: https://api.open-meteo.com
+      - News:  https://hacker-news.firebaseio.com
+      - Jokes: https://official-joke-api.appspot.com
+      - Currency: https://open.er-api.com/v6
      Here are the ShadCN components that are available, along with how to import them, and how to use them:
     NOTE: Whem importing these components do not import them all in one import statement. Import them line by line
     <import-instructions>
