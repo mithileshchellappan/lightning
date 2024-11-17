@@ -71,23 +71,40 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
     }
 
     const handlePaste = async (e: ClipboardEvent) => {
-      if (!selectedModel.isVisionEnabled) return;
-
       const items = e.clipboardData?.items;
       if (!items) return;
 
       for (const item of Array.from(items)) {
         if (item.type.indexOf('image') !== -1) {
           e.preventDefault();
+          if (!selectedModel.isVisionEnabled) {
+            const visionModel = Models.find(m => m.isVisionEnabled);
+            if (visionModel) {
+              setSelectedModel(visionModel);
+              const select = document.querySelector('select') as HTMLSelectElement;
+              if (select) {
+                select.value = visionModel.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }
+          }
+          
           const file = item.getAsFile();
           if (file) {
             try {
+              const blobUrl = URL.createObjectURL(file);
+              
+              const response = await fetch(blobUrl);
+              const blob = await response.blob();
+              
               const reader = new FileReader();
               reader.onload = (e) => {
                 const dataUrl = e.target?.result as string;
                 setImage(dataUrl);
               };
-              reader.readAsDataURL(file);
+              reader.readAsDataURL(blob);
+              
+              URL.revokeObjectURL(blobUrl);
             } catch (error) {
               console.error('Error processing pasted image:', error);
             }
