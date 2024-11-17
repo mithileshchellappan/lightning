@@ -13,10 +13,11 @@ interface ChatInputProps extends React.TextareaHTMLAttributes<HTMLTextAreaElemen
   contentClassName?: string;
   imageUrl?: string;
   handleGenerate: (params: {imageId?: string, model: typeof Models[0]}) => void;
+  user?: any;
 }
 
 const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
-  ({ containerClassName, cardClassName, contentClassName, className, imageUrl, handleGenerate, ...props }, ref) => {
+  ({ containerClassName, cardClassName, contentClassName, className, imageUrl, handleGenerate, user, ...props }, ref) => {
 
     const [image, setImage] = useState<string | null>(null);
     const [title, setTitle] = useState('');
@@ -233,7 +234,9 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
                 className="h-10 px-6 text-white dark:text-black text-base font-medium w-full sm:w-auto"
                 disabled={isLoading}
               >
-                {isLoading ? (
+                {!user ? (
+                  'Login'
+                ) : isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     <span>Generating...</span>
