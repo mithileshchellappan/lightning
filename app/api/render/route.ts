@@ -139,6 +139,8 @@ var GENERATE_PROMPT = `
     - NEVER ADD PLACEHOLDERS TO YOUR APP. ALL FUNCTIONS SHOULD BE IMPLEMENTED.
     - You are given an array of messages. When user requires a change, make sure to update code accordingly based on previous changes as well.
     - ALWAYS USE LOCAL STORAGE TO PERSIST STATE. FOR EXAMPLE A TODO APP SHOULD PERSIST THE TODO LIST ACROSS RELOADS.
+    - DO NOT CREATE AN OUTLINE FOR YOUR APP. THE OUTLINE WILL BE HANDLED EXTERNALLY.
+    - ALWAYS HANDLE YOUR LAYOUT. IF YOU ARE CREATING A LIST WHICH MIGHT EXPAND, MAKE SURE TO HANDLE THE LAYOUT PROPERLY. FOR EXAMPLE, IF YOU ARE HAVING A COLLAPSIBLE LIST, MAKE SURE THE BACKGROUND COLOR AND OUTLINE YOU MIGHT CREATE ARE HANDLED ACCORDING TO THE CHANGING VIEWS.
     - If in need of data, use public apis to fetch data. Do not hardcode data. Some examples are
       - Crypto Price: https://api.coindesk.com/v1/
       - Maps: https://api.mapbox.com

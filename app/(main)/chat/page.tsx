@@ -342,7 +342,7 @@ while (true) {
         </header>
 
         {/* Main content */}
-        <main className="flex-grow flex flex-col overflow-hidden p-4">
+        <main className="flex-grow flex flex-col overflow-hidden p-0 sm:p-4">
           <div className="flex-grow bg-white dark:bg-zinc-900 rounded-lg overflow-hidden shadow-lg relative">
             {isLoading ?
               <LoadingRipple /> :
