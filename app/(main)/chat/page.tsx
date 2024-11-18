@@ -118,7 +118,7 @@ export default function RenderPage() {
       const response = await fetch('/api/render', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ messages: requestMessages, model: selectedModel.value, isVision }),
+        body: JSON.stringify({ messages: requestMessages, model: selectedModel.id, isVision }),
       });
 
       if (!response.ok || !response.body || response.status !== 200) {

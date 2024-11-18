@@ -29,8 +29,8 @@ async function completeUnfinishedCode(unfinishedCode: string, model: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    let { messages, model, isVision = false } : {messages: ChatCompletionMessageParam[], model: string, isVision: boolean} = await req.json()
-    
+    let { messages, model: modelId, isVision = false } : {messages: ChatCompletionMessageParam[], model: number, isVision: boolean} = await req.json()
+    const model = Models.find(m => m.id === modelId)?.value
     const customApiKey = req.headers.get('X-SambaNovaAPI-Key')
     
     const openai = new OpenAI({
