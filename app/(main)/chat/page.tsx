@@ -86,10 +86,9 @@ export default function RenderPage() {
 
 
   async function handleCodeRequest(query: string, imageId?: string, isUpdate = false) {
-    const storedApiKey = localStorage.getItem('openai-api-key')
     const newMessageCount = messageCount + 1
 
-    if (newMessageCount > 3 && !storedApiKey) {
+    if (newMessageCount > 3 && !apiKey) {
       setShowApiKeyDialog(true)
       setIsLoading(false)
       return false
@@ -110,7 +109,7 @@ export default function RenderPage() {
         : [userMessage];
       const headers = messageCount >= 3 ? {
         'Content-Type': 'application/json',
-        ...(storedApiKey && { 'X-SambaNovaAPI-Key': storedApiKey })
+        ...(apiKey && { 'X-SambaNovaAPI-Key': apiKey })
       } : {
         'Content-Type': 'application/json',
       }
@@ -314,16 +313,8 @@ while (true) {
     setCode({ code: version.content })
   }
 
-  useEffect(() => {
-    const storedApiKey = localStorage.getItem('openai-api-key')
-    if (storedApiKey) {
-      setApiKey(storedApiKey)
-    }
-  }, [])
-
   const handleApiKeySubmit = () => {
     if (apiKey.trim()) {
-      localStorage.setItem('openai-api-key', apiKey.trim())
       setShowApiKeyDialog(false)
     }
   }
