@@ -18,11 +18,11 @@ interface ChatInputProps extends React.TextareaHTMLAttributes<HTMLTextAreaElemen
     model: typeof Models[0],
     selectedVersionIndex?: number | null
   }) => void;
-  selectedVersionIndex: number | null;
+  selectedVersionIndex?: number | null;
 }
 
 const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
-  ({ containerClassName, cardClassName, contentClassName, className, imageUrl, handleGenerate, selectedVersionIndex, ...props }, ref) => {
+  ({ containerClassName, cardClassName, contentClassName, className, imageUrl, handleGenerate, selectedVersionIndex = null, ...props }, ref) => {
 
     const { isSignedIn } = useUser();
     const [image, setImage] = useState<string | null>(null);
