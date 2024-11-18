@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import OpenAI from 'openai'
 import shadcnComponents from '@/utils/shadcn-ai-extract';
 import dedent from 'dedent';
 import { Models } from '@/lib/utils';
@@ -26,10 +27,17 @@ async function completeUnfinishedCode(unfinishedCode: string, model: string) {
   return completion.choices[0].message.content;
 }
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    let {messages, model, isVision = false} : {messages: ChatCompletionMessageParam[], model: String, isVision: boolean} = await request.json();
-    console.log(model)
+    let { messages, model, isVision = false } : {messages: ChatCompletionMessageParam[], model: string, isVision: boolean} = await req.json()
+    
+    const customApiKey = req.headers.get('X-SambaNovaAPI-Key')
+    
+    const openai = new OpenAI({
+      apiKey: customApiKey || process.env.SAMBANOVA_API_KEY,
+      baseURL: process.env.SAMBANOVA_BASE_URL
+    })
+
     if(isVision && !Models.find(m => m.value === model)?.isVisionEnabled) {
       console.log("Removing image from messages")
       messages = messages.map(message => {
@@ -48,7 +56,7 @@ export async function POST(request: Request) {
     messages = [systemMessage, ...messages]
 
 
-    const completion = await openaiClient.chat.completions.create({
+    const completion = await openai.chat.completions.create({
       model: model as string,
       messages: messages,
       temperature: 0.1,
@@ -57,12 +65,10 @@ export async function POST(request: Request) {
     
     var text = completion.choices[0].message.content
     // var text = EXAMPLE_UNFINISHED_CODE
-    // Remove code block markers
     text = text.replace(/^```[\w-]*\n|```$/gm, '')
     
     text = dedent(text)
 
-    // Check if code has opening tag but no closing tag
     if (text.includes('<lightningArtifact') && !text.includes('</lightningArtifact>')) {
       console.log("Detected unfinished code, attempting to complete it...")
       text = await completeUnfinishedCode(text, model as string)
@@ -113,6 +119,7 @@ var GENERATE_PROMPT = `
     - The name should be the name of the app generated.
     - The icon should be a valid icon name from the Lucide React icon library.
     - If using React Fragment, import properly from "react" package.
+    - Generate full background color. Do not use background just for the inner content.
     - IMPORTANT: DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`. DO NOT USE MARKDOWN CODE BLOCKS
     - Create a React component for whatever the user asked you to create and make sure it can run by itself by using a default export
     - DO NOT START WITH BACKTICKS 

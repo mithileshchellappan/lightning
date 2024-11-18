@@ -18,6 +18,7 @@ import Image from 'next/image'
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -74,6 +75,9 @@ export default function RenderPage() {
   const [publishName, setPublishName] = useState("")
   const { toast } = useToast()
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<number | null>(null)
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false)
+  const [apiKey, setApiKey] = useState('')
+  const [messageCount, setMessageCount] = useState(0)
 
   async function getImage(imageId: string) {
     const fetchedImage = await fetch(`/api/image?id=${imageId}`).then(res => res.json())
@@ -82,6 +86,15 @@ export default function RenderPage() {
 
 
   async function handleCodeRequest(query: string, imageId?: string, isUpdate = false) {
+    const storedApiKey = localStorage.getItem('openai-api-key')
+    const newMessageCount = messageCount + 1
+
+    if (newMessageCount > 3 && !storedApiKey) {
+      setShowApiKeyDialog(true)
+      setIsLoading(false)
+      return false
+    }
+
     setIsLoading(true);
     try {
       const userContent: ChatCompletionContentPart[] = [{ type: 'text', text: query + `\n Reply only the react component starting with <lightningArtifact and ending with </lightningArtifact>.DO NOT REPLY IN JSON FORMAT!. DO NOT START WITH ANY OTHER TAGS LIKE <script> IMPORTANT: DO NOT REPLY IN PLAIN TEXT. DO NOT ADD ANY COMMENTS. \n IMPORTANT: ONLY REPLY THE FULL EXPORTED REACT CODE. REACT CODE MUST BE A FULL COMPONENT, LIKE export default function GeneratedApp() { ... }` }]
@@ -95,12 +108,16 @@ export default function RenderPage() {
       const requestMessages: ChatCompletionMessageParam[] = isUpdate
         ? [...messages, userMessage]
         : [userMessage];
-
+      const headers = messageCount >= 3 ? {
+        'Content-Type': 'application/json',
+        ...(storedApiKey && { 'X-SambaNovaAPI-Key': storedApiKey })
+      } : {
+        'Content-Type': 'application/json',
+      }
+      console.log("headers", headers, messageCount)
       const response = await fetch('/api/render', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ messages: requestMessages, model: selectedModel.value, isVision }),
       });
 
@@ -127,9 +144,13 @@ export default function RenderPage() {
       if (isUpdate) {
         setViewCode(false);
       }
+
+      setMessageCount(newMessageCount)
+      return true
     } catch (error) {
       console.error('Error fetching code:', error);
       setCode({ code: errorCode, name: 'Error occurred', icon: '' });
+      return false
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +180,7 @@ export default function RenderPage() {
     }
     
     setSelectedVersionIndex(null);
-    handleCodeRequest(query, imageId, true);
+    return handleCodeRequest(query, imageId, true);
   }
 
   async function fetchSuggestions(code: string) {
@@ -217,10 +238,13 @@ while (true) {
     }
   }, [question])
 
-  const handleSend = () => {
-    updateCode(message)
+  const handleSend = async () => {
     setIsLoading(true)
     setSuggestions([])
+    const success = await updateCode(message)
+    if (!success) {
+      setIsLoading(false)
+    }
   }
 
   const handleViewCode = () => {
@@ -290,162 +314,209 @@ while (true) {
     setCode({ code: version.content })
   }
 
+  useEffect(() => {
+    const storedApiKey = localStorage.getItem('openai-api-key')
+    if (storedApiKey) {
+      setApiKey(storedApiKey)
+    }
+  }, [])
+
+  const handleApiKeySubmit = () => {
+    if (apiKey.trim()) {
+      localStorage.setItem('openai-api-key', apiKey.trim())
+      setShowApiKeyDialog(false)
+    }
+  }
+
   return (
-    <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
-      <div className="hidden md:block">
-        <VersionSidebar 
-          versions={versions} 
-          onVersionSelect={handleVersionSelect}
-          selectedVersionIndex={selectedVersionIndex}
-        />
-      </div>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between items-center">
-        <div className="flex text-3xl sm:hidden"><a href="/">⚡️</a></div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="h-auto px-2 py-1.5 text-base sm:text-lg flex items-center gap-2"
-              >
-                <span className="font-semibold truncate max-w-[150px] sm:max-w-[300px]">
-                  {selectedModel.name}
-                </span>
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[200px] sm:w-[300px]" align="start">
-              <DropdownMenuLabel>Select Model</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="max-h-[300px] overflow-y-auto">
-                {Models.map((model) => (
-                  <DropdownMenuItem 
-                    key={model.value} 
-                    className="py-2"
-                    onClick={() => setSelectedModel(model)}
-                  >
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium">
-                        {model.name}
-                      </span>
-                      {model.isVisionEnabled && (
-                        <span className="text-xs text-muted-foreground">
-                          Supports image input
-                        </span>
-                      )}
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <div className='flex items-center'>
-            <TooltipProvider>
-              <div className="flex box-content h-6 items-center gap-2 rounded-md border border-gs-gray-alpha-400 bg-white dark:bg-zinc-800 p-1 ml-auto">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={handleViewCode} className="dark:text-white">
-                      <Code className="h-4 w-4" />
-                      <span className="sr-only">View Code</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>View Code</p>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="shrink-0 bg-gray-200 dark:bg-zinc-700 w-[1px] h-5 md:hidden"></div>
-                <HistorySheet versions={versions} />
-              </div>
-            </TooltipProvider>
-            <ShinyButton 
-              className='ml-5' 
-              onClick={handlePublishClick} 
-              {...({} as ExtendedShinyButtonProps)}
-            >
-              <CloudUpload className="h-4 w-4 sm:hidden" />
-              <span className="hidden sm:inline">Publish</span>
-            </ShinyButton>
-          </div>
-        </header>
-
-        {/* Main content */}
-        <main className="flex-grow flex flex-col overflow-hidden p-0 sm:p-4">
-          <div className="flex-grow bg-white dark:bg-zinc-900 sm:rounded-lg overflow-hidden sm:shadow-lg relative">
-            {isLoading ?
-              <LoadingRipple /> :
-              (
-                <div className="h-full w-full scroll-auto">
-                  <CodeViewer errorCallback={errorCallback} code={code.code} viewCode={viewCode} screenShotCallback={screenShotCallback} />
-                </div>
-              )}
-          </div>
-          <div className="mt-4 flex flex-col space-y-1">
-            {suggestions.length > 0 && (
-              <div className="flex overflow-x-auto no-scrollbar">
-                <div className="flex space-x-1 pb-2">
-                  {suggestions.slice(0, 7).map((suggestion, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      className={`h-6 px-2 text-xs rounded-full bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 focus:bg-gray-100 dark:focus:bg-zinc-700 focus-visible:bg-gray-100 dark:focus-visible:bg-zinc-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-gray-400 dark:focus:border-gray-500 focus-visible:border-gray-400 dark:focus-visible:border-gray-400 focus-visible:ring-2 focus-visible:ring-blue-600 dark:focus-visible:ring-blue-400 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-black transition-all flex items-center gap-0.5 whitespace-nowrap flex-shrink-0 ${index >= 3 ? 'hidden sm:flex' : ''}`}
-                    >
-                      <span className="truncate max-w-[180px] text-black dark:text-white">{suggestion}</span>
-                      <ArrowUpRight className="h-4 w-4 flex-shrink-0" />
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="w-full">
-              <RevisionInput
-                value={message}
-                onChange={setMessage}
-                onSubmit={handleSend}
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-        </main>
-      </div>
-
-      <Dialog open={isPublishModalOpen} onOpenChange={setIsPublishModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Publish your Lightning App</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
+    <>
+      <AlertDialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Enter Your API Key</AlertDialogTitle>
+            <AlertDialogDescription>
+              You've reached the limit of free messages. Please enter your API key to continue.
+              Your key will be stored locally and used for future requests.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4">
             <Input
-              id="componentName"
-              value={publishName}
-              defaultValue={code.name}
-              onChange={(e) => setPublishName(e.target.value)}
-              placeholder="App Name"
+              id="api-key"
+              type="password"
+              placeholder="0d..."
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
               className="w-full"
             />
           </div>
-          <DialogFooter>
-            <Button
-              onClick={() => setIsPublishModalOpen(false)}
-              className="mr-2"
-              variant='destructive'
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleApiKeySubmit}
+              disabled={!apiKey.trim()}
             >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handlePublish}
-              variant='outline'
-              disabled={!publishName.trim()}
-            >
-              Publish 🚀
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
+        <div className="hidden md:block">
+          <VersionSidebar 
+            versions={versions} 
+            onVersionSelect={handleVersionSelect}
+            selectedVersionIndex={selectedVersionIndex}
+          />
+        </div>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between items-center">
+          <div className="flex text-3xl sm:hidden"><a href="/">⚡️</a></div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="h-auto px-2 py-1.5 text-base sm:text-lg flex items-center gap-2"
+                >
+                  <span className="font-semibold truncate max-w-[150px] sm:max-w-[300px]">
+                    {selectedModel.name}
+                  </span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[200px] sm:w-[300px]" align="start">
+                <DropdownMenuLabel>Select Model</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="max-h-[300px] overflow-y-auto">
+                  {Models.map((model) => (
+                    <DropdownMenuItem 
+                      key={model.value} 
+                      className="py-2"
+                      onClick={() => setSelectedModel(model)}
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium">
+                          {model.name}
+                        </span>
+                        {model.isVisionEnabled && (
+                          <span className="text-xs text-muted-foreground">
+                            Supports image input
+                          </span>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className='flex items-center'>
+              <TooltipProvider>
+                <div className="flex box-content h-6 items-center gap-2 rounded-md border border-gs-gray-alpha-400 bg-white dark:bg-zinc-800 p-1 ml-auto">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={handleViewCode} className="dark:text-white">
+                        <Code className="h-4 w-4" />
+                        <span className="sr-only">View Code</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>View Code</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <div className="shrink-0 bg-gray-200 dark:bg-zinc-700 w-[1px] h-5 md:hidden"></div>
+                  <HistorySheet versions={versions} />
+                </div>
+              </TooltipProvider>
+              <ShinyButton 
+                className='ml-5' 
+                onClick={handlePublishClick} 
+                {...({} as ExtendedShinyButtonProps)}
+              >
+                <CloudUpload className="h-4 w-4 sm:hidden" />
+                <span className="hidden sm:inline">Publish</span>
+              </ShinyButton>
+            </div>
+          </header>
+
+          {/* Main content */}
+          <main className="flex-grow flex flex-col overflow-hidden p-0 sm:p-4">
+            <div className="flex-grow bg-white dark:bg-zinc-900 sm:rounded-lg overflow-hidden sm:shadow-lg relative">
+              {isLoading ?
+                <LoadingRipple /> :
+                (
+                  <div className="h-full w-full scroll-auto">
+                    <CodeViewer errorCallback={errorCallback} code={code.code} viewCode={viewCode} screenShotCallback={screenShotCallback} />
+                  </div>
+                )}
+            </div>
+            <div className="mt-4 flex flex-col space-y-1">
+              {suggestions.length > 0 && (
+                <div className="flex overflow-x-auto no-scrollbar">
+                  <div className="flex space-x-1 pb-2">
+                    {suggestions.slice(0, 7).map((suggestion, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className={`h-6 px-2 text-xs rounded-full bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 focus:bg-gray-100 dark:focus:bg-zinc-700 focus-visible:bg-gray-100 dark:focus-visible:bg-zinc-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-gray-400 dark:focus:border-gray-500 focus-visible:border-gray-400 dark:focus-visible:border-gray-400 focus-visible:ring-2 focus-visible:ring-blue-600 dark:focus-visible:ring-blue-400 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-black transition-all flex items-center gap-0.5 whitespace-nowrap flex-shrink-0 ${index >= 3 ? 'hidden sm:flex' : ''}`}
+                      >
+                        <span className="truncate max-w-[180px] text-black dark:text-white">{suggestion}</span>
+                        <ArrowUpRight className="h-4 w-4 flex-shrink-0" />
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="w-full">
+                <RevisionInput
+                  value={message}
+                  onChange={setMessage}
+                  onSubmit={handleSend}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+          </main>
+        </div>
+
+        <Dialog open={isPublishModalOpen} onOpenChange={setIsPublishModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Publish your Lightning App</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                id="componentName"
+                value={publishName}
+                defaultValue={code.name}
+                onChange={(e) => setPublishName(e.target.value)}
+                placeholder="App Name"
+                className="w-full"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={() => setIsPublishModalOpen(false)}
+                className="mr-2"
+                variant='destructive'
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handlePublish}
+                variant='outline'
+                disabled={!publishName.trim()}
+              >
+                Publish 🚀
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   )
 }
 
