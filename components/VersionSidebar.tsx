@@ -5,22 +5,34 @@ import { Version } from './version';
 import Image from 'next/image';
 import placeholder from '@/public/placeholder.svg'
 
-const VersionSidebar: React.FC<{ versions: Version[] }> = ({ versions }) => {
-  console.log("versions", versions)
+interface VersionSidebarProps {
+  versions: Version[];
+  onVersionSelect: (version: Version, index: number) => void;
+  selectedVersionIndex: number | null;
+}
+
+const VersionSidebar: React.FC<VersionSidebarProps> = ({ 
+  versions, 
+  onVersionSelect,
+  selectedVersionIndex 
+}) => {
   return (
     <div className="w-[44px] shrink-0 select-none flex-col bg-white dark:bg-black h-full border-r border-gray-200 dark:border-zinc-800 md:flex">
       <div className="pt-4 flex justify-center text-3xl"><a href="/">⚡️</a></div>
       <div className="flex-grow overflow-y-auto pt-1 pb-2 mt-4">
-        {versions.map((version,index) => (
+        {versions.map((version, index) => (
           <HoverCard key={version.id}
-          openDelay={2}
-          closeDelay={0}
+            openDelay={2}
+            closeDelay={0}
           >
             <HoverCardTrigger asChild>
               <Button
                 variant="ghost"
+                onClick={() => onVersionSelect(version, index)}
                 className={`w-[80%] h-10 p-4 justify-center ml-1 ${
-                  version.isActive ? 'text-sm font-medium bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 rounded-md hover:bg-blue-200 transition-colors' : 'text-gray-600 dark:text-gray-400'
+                  selectedVersionIndex === index 
+                    ? 'text-sm font-medium bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 rounded-md hover:bg-blue-200 transition-colors'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
                 }`}
               >
                 <span className="text-xs font-mono">v{index}</span>
@@ -40,7 +52,6 @@ const VersionSidebar: React.FC<{ versions: Version[] }> = ({ versions }) => {
                     alt={version.prompt}
                     fill
                     className="object-cover"
-
                   />
                 </div>
                 <div className="space-y-2">

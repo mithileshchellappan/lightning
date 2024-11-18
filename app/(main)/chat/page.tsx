@@ -73,6 +73,7 @@ export default function RenderPage() {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false)
   const [publishName, setPublishName] = useState("")
   const { toast } = useToast()
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState<number | null>(null)
 
   async function getImage(imageId: string) {
     const fetchedImage = await fetch(`/api/image?id=${imageId}`).then(res => res.json())
@@ -88,7 +89,8 @@ export default function RenderPage() {
         const imageUrl = await getImage(imageId)
         userContent.push({ type: 'image_url', image_url: {url: imageUrl, detail: 'auto'}  })
       }
-      const userMessage: ChatCompletionMessageParam = { role: 'user', content: userContent }
+      const versionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      const userMessage: ChatCompletionMessageParam = { role: 'user', content: userContent, name: versionId }
      
       const requestMessages: ChatCompletionMessageParam[] = isUpdate
         ? [...messages, userMessage]
@@ -110,13 +112,13 @@ export default function RenderPage() {
 
       setCode(result);
       setMessage('');
-      setMessages([...messages, { role: 'assistant', content: [{ type: 'text', text: result.code }] }]);
+      setMessages([...messages, userMessage, { name: versionId, role: 'assistant', content: [{ type: 'text', text: result.code }] }]);
       fetchSuggestions(result.code);
 
       setVersions(prevVersions => [
         ...prevVersions,
         {
-          id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+          id: versionId,
           content: result.code,
           prompt: query,
         },
@@ -137,7 +139,26 @@ export default function RenderPage() {
     handleCodeRequest(query, imageId);
   }
 
-  function updateCode(query: string, imageId?: string) {
+  async function updateCode(query: string, imageId?: string) {
+    if (selectedVersionIndex !== null && selectedVersionIndex < versions.length - 1) {
+      const selectedVersionId = versions[selectedVersionIndex].id;
+      
+      type MessageWithName = ChatCompletionMessageParam & { name?: string };
+      
+      setMessages(prevMessages => {
+        const lastIndex = (prevMessages as MessageWithName[]).findIndex(
+          message => message.name === selectedVersionId
+        );
+        
+        return lastIndex !== -1 
+          ? (prevMessages as MessageWithName[]).slice(0, lastIndex + 2)
+          : prevMessages;
+      });
+
+      setVersions(prevVersions => prevVersions.slice(0, selectedVersionIndex + 1));
+    }
+    
+    setSelectedVersionIndex(null);
     handleCodeRequest(query, imageId, true);
   }
 
@@ -223,9 +244,7 @@ while (true) {
 
   function handlePublishClick() {
     if (typeof code.code === 'string') {
-      const nameMatch = code.code.match(/name="([^"]*)"/)
-      const initialName = nameMatch ? nameMatch[1] : ''
-      setPublishName(initialName)
+      setPublishName(code.name)
       setIsPublishModalOpen(true)
     }
   }
@@ -266,10 +285,19 @@ while (true) {
     }
   }
 
+  const handleVersionSelect = (version: Version, index: number) => {
+    setSelectedVersionIndex(index)
+    setCode({ code: version.content })
+  }
+
   return (
     <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
       <div className="hidden md:block">
-        <VersionSidebar versions={versions} />
+        <VersionSidebar 
+          versions={versions} 
+          onVersionSelect={handleVersionSelect}
+          selectedVersionIndex={selectedVersionIndex}
+        />
       </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
@@ -432,31 +460,37 @@ const LoadingRipple = () => {
   )
 }
 
-const HistorySheet = ({versions}: {versions: Version[]}) => (
-  <Sheet>
-    <SheetTrigger asChild>
-      <Button variant="ghost" size="icon" className="md:hidden">
-        <History className="h-4 w-4" />
-        <span className="sr-only">History</span>
-      </Button>
-    </SheetTrigger>
-    <SheetContent
-      side="bottom"
-      className="max-h-[80vh] overflow-y-auto rounded-t-[10px] border-t-0"
-    >
-      <div className="flex flex-col space-y-4">
-        {versions.map((version,index) => (
-          <div key={version.id} className="flex items-center pb-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-            <div className="relative w-16 h-16">
-              <Image src={version.imageUrl ?? placeholder} alt={version.prompt} fill className="object-cover" />
+const HistorySheet = ({versions}: {versions: Version[]}) => {
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <History className="h-4 w-4" />
+          <span className="sr-only">History</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent
+        side="bottom"
+        className="max-h-[80vh] overflow-y-auto rounded-t-[10px] border-t-0"
+      >
+        <div className="flex flex-col space-y-4">
+          {versions.map((version, index) => (
+            <div 
+              key={version.id} 
+              className={`flex items-center pb-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer `}
+            >
+              <div className="relative w-16 h-16">
+                <Image src={version.imageUrl ?? placeholder} alt={version.prompt} fill className="object-cover" />
+              </div>
+              <div className="flex-1 pl-2">
+                <p className="font-semibold">v{index}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{version.prompt}</p>
+              </div>
             </div>
-            <div className="flex-1 pl-2">
-              <p className="font-semibold">v{index}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{version.prompt}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </SheetContent>
-  </Sheet>
-)
+          ))}
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}

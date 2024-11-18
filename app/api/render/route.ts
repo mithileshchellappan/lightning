@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       text = await completeUnfinishedCode(text, model as string)
     }
 
-    console.log(text)
+    // console.log(text)
     console.log("GENERATED AI Response")
     if (!text.startsWith("<lightningArtifact")) {
       return NextResponse.json({ error: 'Error rendering the component' }, {status: 500});
@@ -112,6 +112,7 @@ var GENERATE_PROMPT = `
     - Start with tag <lightningArtifact name="..." icon="...">...</lightningArtifact>
     - The name should be the name of the app generated.
     - The icon should be a valid icon name from the Lucide React icon library.
+    - If using React Fragment, import properly from "react" package.
     - IMPORTANT: DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`. DO NOT USE MARKDOWN CODE BLOCKS
     - Create a React component for whatever the user asked you to create and make sure it can run by itself by using a default export
     - DO NOT START WITH BACKTICKS 
