@@ -134,7 +134,10 @@ export default function RenderPage() {
 
       setCode(result);
       setMessage('');
-      setMessages([...messages, userMessage, { name: versionId, role: 'assistant', content: [{ type: 'text', text: result.code }] }]);
+      setMessages([...messages, userMessage, { name: versionId, role: 'assistant', content: [
+        { type: 'text',
+           text: `<lightningArtifact name="${result.name}" icon="${result.icon}">${result.code}</lightningArtifact>`
+          }] }]);
       fetchSuggestions(result.code);
 
       setVersions(prevVersions => [
