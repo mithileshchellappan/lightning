@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         return message;
       });
     }    
-    const systemMessage: ChatCompletionMessageParam = {role: 'assistant', content: [{type: 'text', text: dedent(GENERATE_PROMPT)}]}
+    const systemMessage: ChatCompletionMessageParam = {role: 'system', content: [{type: 'text', text: dedent(GENERATE_PROMPT)}]}
     messages = [systemMessage, ...messages]
 
 
@@ -68,15 +68,16 @@ export async function POST(req: NextRequest) {
     text = text.replace(/^```[\w-]*\n|```$/gm, '')
     
     text = dedent(text)
+    console.log(text)
 
     if (text.includes('<lightningArtifact') && !text.includes('</lightningArtifact>')) {
       console.log("Detected unfinished code, attempting to complete it...")
       text = await completeUnfinishedCode(text, model as string)
     }
 
-    // console.log(text)
     console.log("GENERATED AI Response")
-    if (!text.startsWith("<lightningArtifact")) {
+    if (!text.includes("<lightningArtifact")) {
+      console.log("Error rendering the component", text)
       return NextResponse.json({ error: 'Error rendering the component' }, {status: 500});
     }
     const nameMatch = text.match(/name="([^"]*)"/)
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result)
   } catch (error) {
     console.error('Error rendering code:', error);
-    return NextResponse.json({ error: 'Error rendering the component', status: 500 }, {status: 500});
+    return NextResponse.json({ error: `Error rendering the component: ${error.message}` }, {status: 500});
   }
 }
 
@@ -120,6 +121,7 @@ var GENERATE_PROMPT = `
     - The icon should be a valid icon name from the Lucide React icon library.
     - If using React Fragment, import properly from "react" package.
     - Generate full background color. Do not use background just for the inner content.
+    - IMPORTANT: DO NOT REPLY IN JSON FORMAT. EXAMPLE [{'text':'<lightningArtifact ...>', type:'text'}]. ONLY REPLY IN PLAIN TEXT AS <lightningArtifact ...>...</lightningArtifact>
     - IMPORTANT: DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`. DO NOT USE MARKDOWN CODE BLOCKS
     - Create a React component for whatever the user asked you to create and make sure it can run by itself by using a default export
     - DO NOT START WITH BACKTICKS 

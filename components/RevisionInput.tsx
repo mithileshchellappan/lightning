@@ -1,16 +1,47 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { ArrowRight, Loader2, Sparkles, Camera, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface RevisionInputProps {
   value: string;
   disabled?: boolean;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  onImageUpload?: (file: File) => void;
+  onImageRemove?: () => void;
+  imageUrl?: string;
+  isVisionEnabled?: boolean;
 }
 
-const RevisionInput: React.FC<RevisionInputProps> = ({ value, onChange, onSubmit, disabled = false }) => {
+const RevisionInput: React.FC<RevisionInputProps> = ({ 
+  value, 
+  onChange, 
+  onSubmit, 
+  disabled = false,
+  onImageUpload,
+  onImageRemove,
+  imageUrl,
+  isVisionEnabled = false
+}) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImageUpload) {
+      onImageUpload(file);
+    }
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="relative w-full max-w mx-auto">
       <div className="relative flex items-center">
@@ -20,16 +51,62 @@ const RevisionInput: React.FC<RevisionInputProps> = ({ value, onChange, onSubmit
           disabled={disabled}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="pl-10 pr-20 py-6 w-full bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 text-black dark:text-white rounded-full shadow-lg focus:ring-2 focus:ring-blue-500"
+          className="pl-10 pr-32 py-6 w-full bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 text-black dark:text-white rounded-full shadow-lg focus:ring-2 focus:ring-blue-500"
           placeholder="Add in your changes"
         />
-        <Button
-          onClick={onSubmit}
-          disabled={disabled}
-          className="absolute right-2 bg-transparent hover:bg-slate-100 dark:hover:bg-gray-800 text-black dark:text-white  rounded-full p-3"
-        >
-          {disabled ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="size-10" />}
-        </Button>
+        <div className="absolute right-2 flex items-center gap-2">
+          {isVisionEnabled && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              {imageUrl ? (
+                <div className="relative h-8 w-8 rounded-lg border border-gray-200 dark:border-zinc-800">
+                  <button
+                    onClick={onImageRemove}
+                    className="absolute -right-1 -top-1 z-10 h-4 w-4 rounded-full border border-gray-200 bg-white text-gray-900 hover:bg-gray-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800 flex items-center justify-center"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                  <img
+                    src={imageUrl}
+                    alt="Preview"
+                    className="h-full w-full rounded-lg object-cover"
+                  />
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleImageClick}
+                  className={cn(
+                    "h-8 w-8 rounded-full",
+                    !isVisionEnabled && "opacity-50 cursor-not-allowed"
+                  )}
+                  disabled={!isVisionEnabled}
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
+              )}
+            </>
+          )}
+          <Button
+            onClick={onSubmit}
+            disabled={disabled}
+            className="bg-transparent hover:bg-slate-100 dark:hover:bg-gray-800 text-black dark:text-white rounded-full p-3"
+          >
+            {disabled ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowRight className="size-10" />
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

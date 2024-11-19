@@ -85,7 +85,7 @@ export default function RenderPage() {
   }
 
 
-  async function handleCodeRequest(query: string, imageId?: string, isUpdate = false) {
+  async function handleCodeRequest(query: string, imageUrl?: string, isUpdate = false) {
     const newMessageCount = messageCount + 1
 
     if (newMessageCount > 3 && !apiKey) {
@@ -96,11 +96,16 @@ export default function RenderPage() {
 
     setIsLoading(true);
     try {
-      const userContent: ChatCompletionContentPart[] = [{ type: 'text', text: query + `\n Reply only the react component starting with <lightningArtifact and ending with </lightningArtifact>.DO NOT REPLY IN JSON FORMAT!. DO NOT START WITH ANY OTHER TAGS LIKE <script> IMPORTANT: DO NOT REPLY IN PLAIN TEXT. DO NOT ADD ANY COMMENTS. \n IMPORTANT: ONLY REPLY THE FULL EXPORTED REACT CODE. REACT CODE MUST BE A FULL COMPONENT, LIKE export default function GeneratedApp() { ... }` }]
-      if(imageId) {
-        const imageUrl = await getImage(imageId)
-        userContent.push({ type: 'image_url', image_url: {url: imageUrl, detail: 'auto'}  })
+      let userContent: ChatCompletionContentPart[] | string = query
+      if (imageUrl) {
+       userContent = [{ type: 'text', text: query }]
+
+        userContent.push({
+          type: 'image_url',
+          image_url: { url: imageUrl, detail: 'auto' }
+        });
       }
+
       const versionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       const userMessage: ChatCompletionMessageParam = { role: 'user', content: userContent, name: versionId }
      
@@ -155,8 +160,12 @@ export default function RenderPage() {
     }
   }
 
-  function fetchCode(query: string, imageId?: string) {
-    handleCodeRequest(query, imageId);
+  async function fetchCode(query: string, imageId?: string) {
+    let imageUrl = undefined
+    if(imageId) {
+      imageUrl = await getImage(imageId)
+    }
+    handleCodeRequest(query, imageUrl);
   }
 
   async function updateCode(query: string, imageId?: string) {
@@ -191,35 +200,35 @@ export default function RenderPage() {
       if (!response.body) return
       const reader = response.body?.pipeThrough(new TextDecoderStream()).getReader()
       let previousLine = ''
-     
-while (true) {
-  const { done, value } = await reader?.read();
-  if (done) break;
 
-  // Append the incoming chunk to previousLine
-  previousLine += value;
+      while (true) {
+        const { done, value } = await reader?.read();
+        if (done) break;
 
-  let startTag = '<suggestion>';
-  let endTag = '</suggestion>';
+        // Append the incoming chunk to previousLine
+        previousLine += value;
 
-  let startIndex = previousLine.indexOf(startTag);
-  let endIndex = previousLine.indexOf(endTag);
+        let startTag = '<suggestion>';
+        let endTag = '</suggestion>';
 
-  while (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
-    const suggestion = previousLine.substring(
-      startIndex + startTag.length,
-      endIndex
-    );
-    setSuggestions(prevSuggestions => [...prevSuggestions, suggestion]);
-    previousLine = previousLine.substring(endIndex + endTag.length);
-    startIndex = previousLine.indexOf(startTag);
-    endIndex = previousLine.indexOf(endTag);
-  }
+        let startIndex = previousLine.indexOf(startTag);
+        let endIndex = previousLine.indexOf(endTag);
 
-  if (previousLine.length > 2000) {
-    previousLine = previousLine.slice(-2000);
-  }
-}
+        while (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+          const suggestion = previousLine.substring(
+            startIndex + startTag.length,
+            endIndex
+          );
+          setSuggestions(prevSuggestions => [...prevSuggestions, suggestion]);
+          previousLine = previousLine.substring(endIndex + endTag.length);
+          startIndex = previousLine.indexOf(startTag);
+          endIndex = previousLine.indexOf(endTag);
+        }
+
+        if (previousLine.length > 2000) {
+          previousLine = previousLine.slice(-2000);
+        }
+      }
     } catch (error) {
       console.error('Error fetching suggestions:', error)
     }
@@ -319,6 +328,19 @@ while (true) {
     }
   }
 
+  const handleImageUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      // setImageUrl(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageRemove = () => {
+    // setImageUrl(null);
+  };
+
   return (
     <>
       <AlertDialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
@@ -342,7 +364,7 @@ while (true) {
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleApiKeySubmit}
               disabled={!apiKey.trim()}
             >
@@ -354,8 +376,8 @@ while (true) {
 
       <div className="h-screen flex bg-gray-100 dark:bg-black text-gray-900 dark:text-white">
         <div className="hidden md:block">
-          <VersionSidebar 
-            versions={versions} 
+          <VersionSidebar
+            versions={versions}
             onVersionSelect={handleVersionSelect}
             selectedVersionIndex={selectedVersionIndex}
           />
@@ -363,11 +385,11 @@ while (true) {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
           <header className="bg-white flex dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-2 sm:p-4 justify-between items-center">
-          <div className="flex text-3xl sm:hidden"><a href="/">⚡️</a></div>
+            <div className="flex text-3xl sm:hidden"><a href="/">⚡️</a></div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="h-auto px-2 py-1.5 text-base sm:text-lg flex items-center gap-2"
                 >
                   <span className="font-semibold truncate max-w-[150px] sm:max-w-[300px]">
@@ -381,8 +403,8 @@ while (true) {
                 <DropdownMenuSeparator />
                 <div className="max-h-[300px] overflow-y-auto">
                   {Models.map((model) => (
-                    <DropdownMenuItem 
-                      key={model.value} 
+                    <DropdownMenuItem
+                      key={model.value}
                       className="py-2"
                       onClick={() => setSelectedModel(model)}
                     >
@@ -420,9 +442,9 @@ while (true) {
                   <HistorySheet versions={versions} />
                 </div>
               </TooltipProvider>
-              <ShinyButton 
-                className='ml-5' 
-                onClick={handlePublishClick} 
+              <ShinyButton
+                className='ml-5'
+                onClick={handlePublishClick}
                 {...({} as ExtendedShinyButtonProps)}
               >
                 <CloudUpload className="h-4 w-4 sm:hidden" />
@@ -467,6 +489,10 @@ while (true) {
                   onChange={setMessage}
                   onSubmit={handleSend}
                   disabled={isLoading}
+                  onImageUpload={handleImageUpload}
+                  onImageRemove={handleImageRemove}
+                  imageUrl={ undefined}
+                  isVisionEnabled={selectedModel.isVisionEnabled}
                 />
               </div>
             </div>
@@ -496,7 +522,7 @@ while (true) {
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handlePublish}
                 variant='outline'
                 disabled={!publishName.trim()}
@@ -514,15 +540,15 @@ while (true) {
 const LoadingRipple = () => {
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-background md:shadow-xl">
-        <p className="z-10 whitespace-pre-wrap text-center text-5xl font-mono font-medium tracking-tighter text-white darK: ">
-          Generating
-        </p>
-        <Ripple />
-      </div>
+      <p className="z-10 whitespace-pre-wrap text-center text-5xl font-mono font-medium tracking-tighter text-white darK: ">
+        Generating
+      </p>
+      <Ripple />
+    </div>
   )
 }
 
-const HistorySheet = ({versions}: {versions: Version[]}) => {
+const HistorySheet = ({ versions }: { versions: Version[] }) => {
 
   return (
     <Sheet>
@@ -538,8 +564,8 @@ const HistorySheet = ({versions}: {versions: Version[]}) => {
       >
         <div className="flex flex-col space-y-4">
           {versions.map((version, index) => (
-            <div 
-              key={version.id} 
+            <div
+              key={version.id}
               className={`flex items-center pb-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer `}
             >
               <div className="relative w-16 h-16">
