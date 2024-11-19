@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2, Sparkles, Camera, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 
 interface RevisionInputProps {
   value: string;
@@ -15,10 +16,10 @@ interface RevisionInputProps {
   isVisionEnabled?: boolean;
 }
 
-const RevisionInput: React.FC<RevisionInputProps> = ({ 
-  value, 
-  onChange, 
-  onSubmit, 
+const RevisionInput: React.FC<RevisionInputProps> = ({
+  value,
+  onChange,
+  onSubmit,
   disabled = false,
   onImageUpload,
   onImageRemove,
@@ -66,17 +67,37 @@ const RevisionInput: React.FC<RevisionInputProps> = ({
               />
               {imageUrl ? (
                 <div className="relative h-8 w-8 rounded-lg border border-gray-200 dark:border-zinc-800">
-                  <button
-                    onClick={onImageRemove}
-                    className="absolute -right-1 -top-1 z-10 h-4 w-4 rounded-full border border-gray-200 bg-white text-gray-900 hover:bg-gray-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800 flex items-center justify-center"
+                  <HoverCard
+                    openDelay={2}
+                    closeDelay={0}
                   >
-                    <X className="h-2.5 w-2.5" />
-                  </button>
-                  <img
-                    src={imageUrl}
-                    alt="Preview"
-                    className="h-full w-full rounded-lg object-cover"
-                  />
+                    <HoverCardTrigger>
+                      <button
+                        onClick={onImageRemove}
+                        className="absolute -right-1 -top-1 z-10 h-4 w-4 rounded-full border border-gray-200 bg-white text-gray-900 hover:bg-gray-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800 flex items-center justify-center"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                      <img
+                        src={imageUrl}
+                        alt="Preview"
+                        className="h-full w-full rounded-lg object-cover"
+                      />
+                    </HoverCardTrigger>
+                    <HoverCardContent
+                      className="w-[320px] p-2"
+                      side="top"
+                      align="start"
+                    >
+                      <div className="aspect-[4/3] w-full relative rounded-lg overflow-hidden">
+                        <img
+                          src={imageUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
                 </div>
               ) : (
                 <Button

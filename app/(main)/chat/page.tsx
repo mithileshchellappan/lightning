@@ -78,6 +78,7 @@ export default function RenderPage() {
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false)
   const [apiKey, setApiKey] = useState('')
   const [messageCount, setMessageCount] = useState(0)
+  const [chatImageUrl, setChatImageUrl] = useState<string | null>(null)
 
   async function getImage(imageId: string) {
     const fetchedImage = await fetch(`/api/image?id=${imageId}`).then(res => res.json())
@@ -150,6 +151,7 @@ export default function RenderPage() {
       }
 
       setMessageCount(newMessageCount)
+      setChatImageUrl(null)
       return true
     } catch (error) {
       console.error('Error fetching code:', error);
@@ -168,7 +170,7 @@ export default function RenderPage() {
     handleCodeRequest(query, imageUrl);
   }
 
-  async function updateCode(query: string, imageId?: string) {
+  async function updateCode(query: string) {
     if (selectedVersionIndex !== null && selectedVersionIndex < versions.length - 1) {
       const selectedVersionId = versions[selectedVersionIndex].id;
       
@@ -188,7 +190,7 @@ export default function RenderPage() {
     }
     
     setSelectedVersionIndex(null);
-    return handleCodeRequest(query, imageId, true);
+    return handleCodeRequest(query, chatImageUrl, true);
   }
 
   async function fetchSuggestions(code: string) {
@@ -332,13 +334,13 @@ export default function RenderPage() {
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
-      // setImageUrl(result);
+      setChatImageUrl(result);
     };
     reader.readAsDataURL(file);
   };
 
   const handleImageRemove = () => {
-    // setImageUrl(null);
+    setChatImageUrl(null);
   };
 
   return (
@@ -491,7 +493,7 @@ export default function RenderPage() {
                   disabled={isLoading}
                   onImageUpload={handleImageUpload}
                   onImageRemove={handleImageRemove}
-                  imageUrl={ undefined}
+                  imageUrl={chatImageUrl || undefined}
                   isVisionEnabled={selectedModel.isVisionEnabled}
                 />
               </div>
