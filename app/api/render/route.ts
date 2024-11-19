@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import shadcnComponents from '@/utils/shadcn-ai-extract';
 import dedent from 'dedent';
 import { Models } from '@/lib/utils';
-import { CoreMessage, generateText } from 'ai';
-// import openai from '@/utils/openai';
-import { openaiClient } from '@/utils/openai';
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
 
-async function completeUnfinishedCode(unfinishedCode: string, model: string) {
+async function completeUnfinishedCode(unfinishedCode: string,  apiKey: string) {
   const completionMessage: ChatCompletionMessageParam = {
     role: 'user',
     content: `Complete this React component code. Add any missing functionality and make sure to end with </lightningArtifact>:\n\n${unfinishedCode}`
   }
   
-  const completion = await openaiClient.chat.completions.create({
-    model: model as string,
-    messages: [
-      { role: 'system', content: 'You are a React expert. Complete the unfinished component code and make sure it ends with </lightningArtifact>. DO NOT REPLY WITH ANYTHING OTHER THAN THE COMPLETED CODE. DO NOT USE BACKTICKS. DO NOT PROVIDE ANY EXPLANATION. JUST THE COMPLETED CODE.' },
-      completionMessage
-    ],
-    temperature: 0.1,
-    top_p: 0.3
+  const response = await fetch(`${process.env.SAMBANOVA_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: Models[1].value,
+      messages: [
+        { role: 'system', content: 'You are a React expert. Complete the unfinished component code and make sure it ends with </lightningArtifact>. DO NOT REPLY WITH ANYTHING OTHER THAN THE COMPLETED CODE. DO NOT USE BACKTICKS. DO NOT PROVIDE ANY EXPLANATION. JUST THE COMPLETED CODE.' },
+        completionMessage
+      ],
+      temperature: 0.1,
+      top_p: 0.3
+    })
   });
 
+  if (!response.ok) {
+    throw new Error(`API call failed: ${response.status}`);
+  }
+
+  const completion = await response.json();
   return completion.choices[0].message.content;
 }
 
@@ -32,11 +40,7 @@ export async function POST(req: NextRequest) {
     let { messages, model: modelId, isVision = false } : {messages: ChatCompletionMessageParam[], model: number, isVision: boolean} = await req.json()
     const model = Models.find(m => m.id === modelId)?.value
     const customApiKey = req.headers.get('X-SambaNovaAPI-Key')
-    
-    const openai = new OpenAI({
-      apiKey: customApiKey || process.env.SAMBANOVA_API_KEY,
-      baseURL: process.env.SAMBANOVA_BASE_URL
-    })
+    const apiKey = customApiKey || process.env.SAMBANOVA_API_KEY
 
     if(isVision && !Models.find(m => m.value === model)?.isVisionEnabled) {
       console.log("Removing image from messages")
@@ -55,13 +59,24 @@ export async function POST(req: NextRequest) {
     const systemMessage: ChatCompletionMessageParam = {role: 'user', content: [{type: 'text', text: dedent(GENERATE_PROMPT)}]}
     messages = [systemMessage, ...messages]
 
-
-    const completion = await openai.chat.completions.create({
-      model: model as string,
-      messages: messages,
+    const response = await fetch(`${process.env.SAMBANOVA_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages
+      })
     });
-    
-    var text = completion.choices[0].message.content
+
+    if (!response.ok) {
+      throw new Error(`API call failed: ${response.status}`);
+    }
+
+    const completion = await response.json();
+    var text = completion.choices[0].message.content;
 
     // var text = EXAMPLE_UNFINISHED_CODE
     text = text.replace(/^```[\w-]*\n|```$/gm, '')
@@ -70,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     if (text.includes('<lightningArtifact') && !text.includes('</lightningArtifact>')) {
       console.log("Detected unfinished code, attempting to complete it...")
-      text = await completeUnfinishedCode(text, model as string)
+      text = await completeUnfinishedCode(text, apiKey)
     }
 
     console.log("GENERATED AI Response")
