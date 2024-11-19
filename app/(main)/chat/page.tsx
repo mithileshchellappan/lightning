@@ -48,9 +48,9 @@ interface ExtendedShinyButtonProps extends ShinyButtonProps {
   disabled?: boolean;
 }
 
-const errorCode = `export default function App() {
+const errorCode = (errorString: string = "Something went wrong. Please try again.") => `export default function App() {
   return (
-    <div>Something went wrong. Please try again.</div>
+    <div>${errorString}</div>
   );
 }`
 
@@ -97,14 +97,10 @@ export default function RenderPage() {
 
     setIsLoading(true);
     try {
-      let userContent: ChatCompletionContentPart[] | string = query
+      let userContent: ChatCompletionContentPart[] | string = query 
       if (imageUrl) {
-       userContent = [{ type: 'text', text: query }]
-
-        userContent.push({
-          type: 'image_url',
-          image_url: { url: imageUrl, detail: 'auto' }
-        });
+       userContent = [{ type: 'text', text: query }
+        , { type: 'image_url', image_url: { url: imageUrl, detail: 'auto' } }]
       }
 
       const versionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
@@ -127,7 +123,12 @@ export default function RenderPage() {
       });
 
       if (!response.ok || !response.body || response.status !== 200) {
-        throw new Error('No response body');
+        if(response.body) {
+          const error = await response.json()
+          throw new Error(error.error)
+        } else {
+          throw new Error('No response body')
+        }
       }
 
       const result = await response.json();
@@ -158,7 +159,13 @@ export default function RenderPage() {
       return true
     } catch (error) {
       console.error('Error fetching code:', error);
-      setCode({ code: errorCode, name: 'Error occurred', icon: '' });
+      if(error.message.includes("429") || error.message.includes("Rate Limit")) {
+        setShowApiKeyDialog(true)
+        setCode({ code: errorCode("Rate Limit Exceeded."), name: 'Error occurred', icon: '' });
+      } else {
+        setCode({ code: errorCode(), name: 'Error occurred', icon: '' });
+      }
+      
       return false
     } finally {
       setIsLoading(false);
@@ -280,7 +287,7 @@ export default function RenderPage() {
   }
 
   function handlePublishClick() {
-    if (typeof code.code === 'string') {
+    if (typeof code.code === 'string' && !code.name.includes("Error")) {
       setPublishName(code.name)
       setIsPublishModalOpen(true)
     }
