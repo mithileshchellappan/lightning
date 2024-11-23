@@ -37,7 +37,7 @@ export default function CodeViewer({
   errorCallback?: (error: string) => void;
   previewMode?: boolean;
 }) {
-
+  code = code.replace(/\\(.)/g, '$1');
   return (
     <SandpackProvider
       theme={atomDark}
