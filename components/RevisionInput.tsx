@@ -109,7 +109,7 @@ const RevisionInput: React.FC<RevisionInputProps> = ({
                     "h-8 w-8 rounded-full",
                     !isVisionEnabled && "opacity-50 cursor-not-allowed"
                   )}
-                  disabled={!isVisionEnabled}
+                  disabled={!isVisionEnabled || disabled}
                 >
                   <Camera className="h-4 w-4" />
                 </Button>

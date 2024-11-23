@@ -1,12 +1,35 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export default clerkMiddleware();
+export function middleware(request: NextRequest) {
+  const origin = request.headers.get('origin') || '*'
+  const headers = {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Credentials': 'true',
+  }
+
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        ...headers,
+        'Access-Control-Max-Age': '86400',
+      },
+    })
+  }
+
+  const response = NextResponse.next()
+  Object.entries(headers).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+
+  return response
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
-  ],
-};
+    '/api/llm',
+  ]
+}

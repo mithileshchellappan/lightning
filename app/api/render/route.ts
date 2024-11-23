@@ -4,6 +4,8 @@ import dedent from 'dedent';
 import { Models } from '@/lib/utils';
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
 
+const llmEndpoint = `${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://lightning.notagodzilla.wtf'}/api/llm`
+
 async function completeUnfinishedCode(unfinishedCode: string,  apiKey: string) {
   const completionMessage: ChatCompletionMessageParam = {
     role: 'user',
@@ -19,7 +21,7 @@ async function completeUnfinishedCode(unfinishedCode: string,  apiKey: string) {
     body: JSON.stringify({
       model: Models[1].value,
       messages: [
-        { role: 'system', content: 'You are a React expert. Complete the unfinished component code and make sure it ends with </lightningArtifact>. DO NOT REPLY WITH ANYTHING OTHER THAN THE COMPLETED CODE. DO NOT USE BACKTICKS. DO NOT PROVIDE ANY EXPLANATION. JUST THE COMPLETED CODE.' },
+        { role: 'system', content: 'You are a React expert. Complete the unfinished component code and make sure it starts with <lightningArtifact name="APP_NAME" icon="ICON_NAME">and ends with </lightningArtifact>. DO NOT REPLY WITH ANYTHING OTHER THAN THE COMPLETED CODE. DO NOT USE BACKTICKS. DO NOT PROVIDE ANY EXPLANATION. JUST THE COMPLETED CODE.' },
         completionMessage
       ],
       temperature: 0.1,
@@ -78,7 +80,7 @@ export async function POST(req: NextRequest) {
     const completion = await response.json();
     var text = completion.choices[0].message.content;
 
-    // var text = EXAMPLE_UNFINISHED_CODE
+    // var text = EXAMPLE_CODE
     text = text.replace(/^```[\w-]*\n|```$/gm, '')
     
     text = dedent(text)
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
       console.log("Error rendering the component", text)
       return NextResponse.json({ error: 'Error rendering the component' }, {status: 500});
     }
-    text = text.replaceAll('\'', '"')
+    // text = text.replaceAll('\'', '"')
 
     const nameMatch = text.match(/name="([^"]*)"/)
     const iconMatch = text.match(/icon="([^"]*)"/)
@@ -105,7 +107,6 @@ export async function POST(req: NextRequest) {
     const codeMatch = text.match(/<lightningArtifact[^>]*>([\s\S]*?)(?:<\/lightningArtifact>[\s\S]*$)/)
     let code = codeMatch ? codeMatch[1].trim() : ''
     
-    // Remove script tags but keep their content
  
     code = code.replaceAll('\\n', '\n')
 
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-const EXAMPLE_CODE = `<lightningArtifact name="todo" icon="Puzzle">  import { useState } from 'react';\nimport { Input } from \"/components/ui/input\";\nimport { Button } from \"/components/ui/button\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"/components/ui/card\";\n\nconst TodoApp = () => {\nconst [todos, setTodos] = useState([]);\nconst [newTodo, setNewTodo] = useState('');\n\nconst handleSubmit = (e) => {\n  e.preventDefault();\n  if (newTodo.trim() !== '') {\n    setTodos([...todos, { text: newTodo, completed: false }]);\n    setNewTodo('');\n  }\n};\n\nconst handleToggleCompleted = (index) => {\n  setTodos(todos.map((todo, i) => {\n    if (i === index) {\n      return { ...todo, completed: !todo.completed };\n    }\n    return todo;\n  }));\n};\n\nconst handleDelete = (index) => {\n  setTodos(todos.filter((todo, i) => i !== index));\n};\n\nreturn (\n  <Card className=\"max-w-md mx-auto mt-10\">\n    <CardHeader>\n      <CardTitle>Todo App</CardTitle>\n    </CardHeader>\n    <CardContent>\n      <form onSubmit={handleSubmit} className=\"flex space-x-2 mb-4\">\n        <Input\n          type=\"text\"\n          value={newTodo}\n          onChange={(e) => setNewTodo(e.target.value)}\n          placeholder=\"Add new todo\"\n          className=\"w-full\"\n        />\n        <Button type=\"submit\">Add</Button>\n      </form>\n      <ul>\n        {todos.map((todo, index) => (\n          <li key={index} className=\"flex items-center space-x-2 mb-2\">\n            <input\n              type=\"checkbox\"\n              checked={todo.completed}\n              onChange={() => handleToggleCompleted(index)}\n            />\n            <span className={todo.completed ? 'line-through' : ''}>{todo.text}</span>\n            <Button variant=\"destructive\" onClick={() => handleDelete(index)}>Delete</Button>\n          </li>\n        ))}\n      </ul>\n    </CardContent>\n  </Card>\n);\n};\n\nexport default TodoApp;
+const EXAMPLE_CODE = `<lightningArtifact name="todo" icon="Puzzle">  export default () => <button onClick={() => fetch('${llmEndpoint}', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({message: 'Hello LLM!'})}).then(res => res.json()).then(data => console.log(data)).catch(err => console.error(err))} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Call LLM API</button>
 </lightningArtifact>
 `
 
@@ -154,6 +155,7 @@ var GENERATE_PROMPT = `
    - NO outlines (handled externally)
    - Use consistent color palette
    - Proper spacing with Tailwind margin/padding classes
+   - Full use of available space
 
 3. Dark Mode Support
    - Must support theme changes (no theme toggle needed)
@@ -168,6 +170,18 @@ var GENERATE_PROMPT = `
    - Persist state in localStorage where appropriate
    - All interactive features must be fully implemented
    - NO placeholder functionality
+
+5. LLM AI Integration
+    - If the user requests an AI integration, you must use the LLM endpoint provided: ${llmEndpoint}
+    - The endpoint expects a JSON body with a "message" field
+    - Example request body: {"message": "What is the weather in Tokyo?"}
+    - IMPORTANT: ALWAYS PROVIDE A SCHEMA FOR JSON OUTPUT.ß
+    - Use fetch to call the LLM endpoint.
+    - You should parse the response from the LLM api call as data.response
+    - Make sure you prompt the LLM in a way you need your output to be formatted. If you want long form text, ask for it, if you want short messages, ask for it.
+    - Make the AI button standout from other buttons
+    - IMPORTANT: Always add a loading state to the button when calling the LLM endpoint and disable while loading
+   
 
 # Available Resources
 
