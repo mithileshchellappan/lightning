@@ -9,13 +9,13 @@ export const Models = [
   {
     id: 0,
     name: "Meta Llama 3.1 405B Instruct",
-    value: "gpt-4o",
+    value: "Meta-Llama-3.1-405B-Instruct",
     isVisionEnabled: false
   },
   {
     id: 1,
     name: "Meta Llama 3.1 70B Instruct",
-    value: "gpt-4o-mini",
+    value: "Meta-Llama-3.1-70B-Instruct",
     isVisionEnabled: false
   },
   {
