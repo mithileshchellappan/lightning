@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚡ Lightning - AI-Powered Micro-App Generator
 
-## Getting Started
+Lightning is a web application that transforms natural language descriptions into fully functional React components in real-time. Using advanced AI technology, it makes app development fast, intuitive, and accessible to everyone through a simple chat interface.
 
-First, run the development server:
+## 🚀 Features
 
+- **AI Chat Interface**: Describe your desired component or app in natural language
+- **Live Code Generation**: Get instant React/TypeScript code based on your description
+- **Real-Time Preview**: See your components come to life as you chat
+- **Inbuilt LLM**: The apps have the ability to generate prompts and call LLM's themselves
+- **Component Library**: Built-in support for Shadcn UI and Radix components
+- **TypeScript Ready**: All generated code is type-safe with TypeScript
+- **Modern Stack**: Built with Next.js 14 and Tailwind CSS
+- **Dark Mode**: Full dark mode support for the interface as well as the generated app
+## 🛠 Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **UI Components**: Shadcn UI / Radix UI
+- **Styling**: Tailwind CSS
+- **AI Integration**: SambaNova API
+- **Development**: ESLint, Prettier
+
+## 🏃‍♂️ Getting Started
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/mithileshchellappan/lightning.git
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
+Add your SambaNova API key to `.env.local`:
+```
+SAMBANOVA_API_KEY=your_api_key_here
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) to start using Lightning
 
-To learn more about Next.js, take a look at the following resources:
+## 💡 How to Use
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Start a Chat**: Open the chat interface and describe the component you want to create
+   ```
+   "Create a workout tracking app with a daily schedule, exercise timer, and dark mode support"
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Review & Preview**: 
+   - See the generated code in real-time
+   - Preview the component in the built-in viewer
+   - Toggle between light and dark mode
 
-## Deploy on Vercel
+3. **Iterate & Refine**:
+   - Ask for modifications or improvements
+   - The AI will update the code based on your feedback
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Publish & Share**:
+   - Save your creation to your collection
+   - Share the link with friends and colleagues
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- SambaNova Cloud for the blazing inference speeds
+- Shadcn UI for the beautiful component library
+- Next.js team for the amazing framework
+
+## 📞 Support
+
+For support, please open an issue in the GitHub repository.
