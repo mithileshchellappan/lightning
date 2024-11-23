@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       console.log("Error rendering the component", text)
       return NextResponse.json({ error: 'Error rendering the component' }, {status: 500});
     }
-    // text = text.replaceAll('\'', '"')
+    text = text.replaceAll("\'", "'")
 
     const nameMatch = text.match(/name="([^"]*)"/)
     const iconMatch = text.match(/icon="([^"]*)"/)
